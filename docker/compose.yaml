@@ -1,0 +1,63 @@
+# A throwaway Outline installation for the integration suite.
+#
+# `make outline-up` starts it on http://localhost:8099 and seeds a workspace,
+# an admin user, and an API token; `make outline-down` deletes it and its data.
+# Nothing here is meant to outlive a test run: the secrets are fixed so that a
+# rebuild produces the same workspace, and the database is not persisted.
+
+name: outline-client
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: outline
+      POSTGRES_PASSWORD: outline
+      POSTGRES_DB: outline
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U outline -d outline"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  outline:
+    image: outlinewiki/outline:1.10.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8099:8099"
+    environment:
+      PORT: 8099
+      URL: http://localhost:8099
+      DATABASE_URL: postgres://outline:outline@postgres:5432/outline
+      PGSSLMODE: disable
+      REDIS_URL: redis://redis:6379
+      # Fixed, and safe only because this installation is local, empty, and
+      # thrown away. SECRET_KEY must be 32 bytes of hex.
+      SECRET_KEY: 6f75746c696e652d636c69656e742d696e746567726174696f6e2d7465737473
+      UTILS_SECRET: outline-client-integration-tests
+      FILE_STORAGE: local
+      FILE_STORAGE_LOCAL_ROOT_DIR: /var/lib/outline/data
+      FORCE_HTTPS: "false"
+      ENABLE_UPDATES: "false"
+      # The suite creates and deletes far faster than a person would, and the
+      # per-method limits are not what it is testing.
+      RATE_LIMITER_ENABLED: "false"
+      LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8099/_health | grep -q OK"]
+      interval: 3s
+      timeout: 5s
+      retries: 60
+      start_period: 30s

@@ -1,0 +1,60 @@
+[project]
+name = "outline-client"
+version = "0.1.0"
+description = "Outline knowledge base Python API client"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "SB&O Inc", email = "contact@sboinc.com" }]
+keywords = ["outline", "wiki", "knowledge-base", "api", "client", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Office/Business :: Groupware",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "click >= 8.0.0",
+    "httpx >= 0.20.0",
+    "pydantic >= 2.10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sbo-inc/outline-client"
+Repository = "https://github.com/sbo-inc/outline-client"
+Download = "https://github.com/sbo-inc/outline-client/releases"
+Issues = "https://github.com/sbo-inc/outline-client/issues"
+
+[dependency-groups]
+dev = [
+    "datamodel-code-generator == 0.82.0",
+    "mypy == 2.3.1",
+    "ruff == 0.16.4",
+    "pytest == 9.1.1",
+    "pytest-asyncio == 1.4.0",
+    "pytest-cov == 7.1.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests that require a live Outline instance",
+]
+
+[project.scripts]
+outline = "outline_client.cli:main"
+
+[build-system]
+requires = ["uv_build<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+source-include = ["CHANGELOG.md"]
