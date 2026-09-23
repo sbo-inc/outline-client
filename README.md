@@ -7,7 +7,7 @@
 
 An unofficial typed Python client and command-line interface for the [Outline](https://www.getoutline.com) knowledge base API - no affiliation with Outline is implied or intended.
 
-Outline's API is RPC-style: every method is a `POST` to `https://your-wiki/api/:method`. This package wraps all **154** of them in a fully type-hinted client built on [Pydantic](https://docs.pydantic.dev/) models generated from the [published OpenAPI specification](https://github.com/outline/openapi), plus an `outline` CLI for reaching them from the terminal.
+Outline's API is RPC-style: every method is a `POST` to `https://your-outline/api/:method`. This package wraps all **154** of them in a fully type-hinted client built on [Pydantic](https://docs.pydantic.dev/) models generated from the [published OpenAPI specification](https://github.com/outline/openapi), plus an `outline` CLI for reaching them from the terminal.
 
 ## Features
 
@@ -46,7 +46,7 @@ Settings are read from environment variables, or can be passed directly to the c
 export OUTLINE_API_TOKEN="ol_api_..."
 
 # Self-hosted; either spelling of the URL works.
-export OUTLINE_API_URL="https://wiki.example.com"
+export OUTLINE_API_URL="https://outline.example.com"
 ```
 
 OAuth 2.0 access tokens work anywhere an API token does - both are sent as a bearer credential - but this package does not implement the authorization-code exchange that obtains one.

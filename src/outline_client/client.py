@@ -118,7 +118,7 @@ class OutlineClient(BaseOutlineClient):
 
         Args:
             url: The base URL of the API. A workspace URL such as
-                `https://wiki.example.com` is accepted and has `/api` appended.
+                `https://outline.example.com` is accepted and has `/api` appended.
                 (Environment: `OUTLINE_API_URL`, default the cloud host)
             token: The API token to authenticate with.
                 (Environment: `OUTLINE_API_TOKEN`)

@@ -16,7 +16,7 @@ import pytest
 from outline_client.async_client import AsyncOutlineClient
 from outline_client.client import OutlineClient
 
-URL = "https://wiki.example.test/api"
+URL = "https://outline.example.test/api"
 TOKEN = "ol_api_" + "x" * 38
 
 Handler = Callable[[httpx.Request], httpx.Response]

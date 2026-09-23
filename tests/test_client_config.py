@@ -23,39 +23,39 @@ AUTH_INFO = {"user": {"name": "Ada"}, "team": {"name": "Example"}}
 class TestNormalizeUrl:
     def test_appends_the_api_prefix_to_a_workspace_url(self) -> None:
         assert (
-            normalize_url("https://wiki.example.com") == "https://wiki.example.com/api"
+            normalize_url("https://outline.example.com") == "https://outline.example.com/api"
         )
 
     def test_leaves_an_api_url_alone(self) -> None:
         assert (
-            normalize_url("https://wiki.example.com/api")
-            == "https://wiki.example.com/api"
+            normalize_url("https://outline.example.com/api")
+            == "https://outline.example.com/api"
         )
 
     def test_ignores_a_trailing_slash(self) -> None:
         assert (
-            normalize_url("https://wiki.example.com/") == "https://wiki.example.com/api"
+            normalize_url("https://outline.example.com/") == "https://outline.example.com/api"
         )
         assert (
-            normalize_url("https://wiki.example.com/api/")
-            == "https://wiki.example.com/api"
+            normalize_url("https://outline.example.com/api/")
+            == "https://outline.example.com/api"
         )
 
     def test_trusts_any_other_path_as_given(self) -> None:
         # An installation behind a proxy that remounts the API is not
         # second-guessed.
         assert (
-            normalize_url("https://example.com/wiki/api")
-            == "https://example.com/wiki/api"
+            normalize_url("https://example.com/outline/api")
+            == "https://example.com/outline/api"
         )
 
     def test_drops_a_query_string(self) -> None:
         assert (
-            normalize_url("https://wiki.example.com/api?x=1")
-            == "https://wiki.example.com/api"
+            normalize_url("https://outline.example.com/api?x=1")
+            == "https://outline.example.com/api"
         )
 
-    @pytest.mark.parametrize("value", ["", "wiki.example.com", "/api", "not a url"])
+    @pytest.mark.parametrize("value", ["", "outline.example.com", "/api", "not a url"])
     def test_rejects_a_url_that_is_not_absolute(self, value: str) -> None:
         with pytest.raises(OutlineConfigurationError):
             normalize_url(value)
@@ -71,12 +71,12 @@ class TestConfiguration:
         assert OutlineClient().url == DEFAULT_URL
 
     def test_reads_the_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("OUTLINE_API_URL", "https://wiki.example.com")
+        monkeypatch.setenv("OUTLINE_API_URL", "https://outline.example.com")
         monkeypatch.setenv("OUTLINE_API_TOKEN", TOKEN)
 
         client = OutlineClient()
 
-        assert client.url == "https://wiki.example.com"
+        assert client.url == "https://outline.example.com"
         assert client.token == TOKEN
 
     def test_arguments_win_over_the_environment(
@@ -102,10 +102,10 @@ class TestConfiguration:
         assert "Authorization" not in client._headers()
 
     def test_builds_the_endpoint_for_a_method(self) -> None:
-        client = OutlineClient(url="https://wiki.example.com", token=TOKEN)
+        client = OutlineClient(url="https://outline.example.com", token=TOKEN)
 
         assert client._endpoint("documents.info") == (
-            "https://wiki.example.com/api/documents.info"
+            "https://outline.example.com/api/documents.info"
         )
 
 

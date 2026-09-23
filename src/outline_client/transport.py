@@ -41,8 +41,8 @@ def normalize_url(url: str) -> str:
     Resolve a configured URL to the API root every method hangs off.
 
     A workspace URL and an API URL are both accepted, because both are things a
-    caller reasonably has to hand: `https://wiki.example.com` gains the `/api`
-    prefix, `https://wiki.example.com/api` is already there and is left alone.
+    caller reasonably has to hand: `https://outline.example.com` gains the `/api`
+    prefix, `https://outline.example.com/api` is already there and is left alone.
     A URL with any other path is trusted as given, so an installation behind a
     reverse proxy that remounts the API is not second-guessed.
 
