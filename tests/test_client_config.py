@@ -23,7 +23,8 @@ AUTH_INFO = {"user": {"name": "Ada"}, "team": {"name": "Example"}}
 class TestNormalizeUrl:
     def test_appends_the_api_prefix_to_a_workspace_url(self) -> None:
         assert (
-            normalize_url("https://outline.example.com") == "https://outline.example.com/api"
+            normalize_url("https://outline.example.com")
+            == "https://outline.example.com/api"
         )
 
     def test_leaves_an_api_url_alone(self) -> None:
@@ -34,7 +35,8 @@ class TestNormalizeUrl:
 
     def test_ignores_a_trailing_slash(self) -> None:
         assert (
-            normalize_url("https://outline.example.com/") == "https://outline.example.com/api"
+            normalize_url("https://outline.example.com/")
+            == "https://outline.example.com/api"
         )
         assert (
             normalize_url("https://outline.example.com/api/")
