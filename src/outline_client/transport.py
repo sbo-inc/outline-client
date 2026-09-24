@@ -1,15 +1,25 @@
 import json
 import logging
+import mimetypes
 import os
+import re
+from email.message import Message
+from email.utils import collapse_rfc2231_value
+from pathlib import PurePosixPath
 from typing import Any, NoReturn
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import unquote, urljoin, urlsplit, urlunsplit
 
 import httpx
 
 from outline_client.errors import (
+    OutlineAPIError,
     OutlineConfigurationError,
+    StorageError,
     error_for_status,
 )
+from outline_client.operations.generic import form_fields
+from outline_client.schemas.models import Attachment
+from outline_client.schemas.results import AttachmentDownload, AttachmentUpload
 
 logger = logging.getLogger("outline_client")
 console_handler = logging.StreamHandler()
@@ -61,6 +71,47 @@ def normalize_url(url: str) -> str:
         path = API_PREFIX
 
     return urlunsplit((parts.scheme, parts.netloc, path, "", ""))
+
+
+# =============================================================================
+# FUNCTION: guess_content_type
+# =============================================================================
+
+
+def guess_content_type(name: str) -> str:
+    """
+    Guess a file's MIME type from its name.
+
+    Returns:
+        str: The type, or `application/octet-stream` if the name says nothing.
+    """
+    return mimetypes.guess_type(name)[0] or "application/octet-stream"
+
+
+# =============================================================================
+# FUNCTION: filename
+# =============================================================================
+
+
+def filename(disposition: str) -> str | None:
+    """
+    Read the file name from a `Content-Disposition` header.
+
+    RFC 6266 has a recipient prefer `filename*`, which carries the name in
+    full, over the ASCII fallback in `filename`; the standard library's own
+    `get_filename` does the opposite, so the encoded parameter is looked for
+    first.
+
+    Returns:
+        str | None: The file name, or None if the header does not give one.
+    """
+    message = Message()
+    message["Content-Disposition"] = disposition
+    for key, value in message.get_params(header="content-disposition") or []:
+        if key == "filename" and isinstance(value, tuple):
+            return collapse_rfc2231_value(value)
+
+    return message.get_filename()
 
 
 # =============================================================================
@@ -132,6 +183,23 @@ class BaseOutlineClient:
             )
 
         return f"{normalize_url(self.url)}/{path.lstrip('/')}"
+
+    # -------------------------------------------------------------------------
+    # METHOD: _absolute
+    # -------------------------------------------------------------------------
+
+    def _absolute(self, url: str) -> str:
+        """
+        Resolve a URL Outline sent against the origin of the API.
+
+        An absolute URL is returned as it is. A relative one is a path on
+        Outline itself: with local file storage, an attachment's upload URL
+        is `/api/files.create`.
+
+        Returns:
+            str: The absolute URL.
+        """
+        return urljoin(self._endpoint(""), url)
 
     # -------------------------------------------------------------------------
     # METHOD: _headers
@@ -237,9 +305,16 @@ class BaseOutlineClient:
     # METHOD: _raise_for_status
     # -------------------------------------------------------------------------
 
-    def _raise_for_status(self, response: httpx.Response) -> NoReturn:
+    def _raise_for_status(
+        self,
+        response: httpx.Response,
+        error: type[OutlineAPIError] | None = None,
+    ) -> NoReturn:
         """
         Raise the exception that represents a failed response.
+
+        `error` overrides the class chosen from the status, which is how a
+        file store's refusal is raised as a `StorageError`.
 
         Annotated `NoReturn`, so a caller that ends in this call is understood
         to end there and needs no unreachable return of its own.
@@ -255,12 +330,117 @@ class BaseOutlineClient:
             # happened, so the undecodable body is reported as the message.
             payload = {}
 
+        if not payload:
+            # S3 and the services compatible with it answer in XML, with a
+            # machine-readable code and a message of their own.
+            code = re.search(r"<Code>(.*?)</Code>", response.text)
+            if code:
+                payload["error"] = code[1]
+            text = re.search(r"<Message>(.*?)</Message>", response.text)
+            if text:
+                payload["message"] = text[1]
+
         message = payload.get("message") or payload.get("error") or response.text[:200]
 
-        raise error_for_status(response.status_code)(
+        raise (error or error_for_status(response.status_code))(
             str(message) or response.reason_phrase,
             status=response.status_code,
             error=payload.get("error"),
             data=payload.get("data"),
             response=response,
+        )
+
+    # -------------------------------------------------------------------------
+    # METHOD: _storage_request
+    # -------------------------------------------------------------------------
+
+    def _storage_request(
+        self,
+        upload: AttachmentUpload,
+        content: bytes,
+        *,
+        name: str,
+        content_type: str,
+    ) -> dict[str, Any]:
+        """
+        Describe the request that sends an attachment's bytes to its file store.
+
+        `put` mode is a PUT of the bytes to the presigned `url`, with the
+        headers the signature covers. `post` mode, and any reply that predates
+        the modes, is a multipart form to `upload_url`, the file last because
+        S3 ignores any field after it.
+
+        No API token is added: the store is a different origin, and the reply
+        authorizes the upload on its own - by the presigned URL, the policy in
+        the form, or with local storage a signature among the form fields.
+
+        Returns:
+            dict[str, Any]: The arguments for the HTTP client's `request`.
+        """
+        if upload.mode == "put":
+            headers = {str(key): str(value) for key, value in upload.headers.items()}
+            if not any(key.lower() == "content-type" for key in headers):
+                headers["Content-Type"] = content_type
+            return {
+                "method": "PUT",
+                "url": self._absolute(upload.url or ""),
+                "content": content,
+                "headers": headers,
+                "timeout": self._request_timeout(),
+            }
+
+        return {
+            "method": "POST",
+            "url": self._absolute(upload.upload_url or ""),
+            "data": form_fields(upload.form),
+            "files": {"file": (name, content, content_type)},
+            "timeout": self._request_timeout(),
+        }
+
+    # -------------------------------------------------------------------------
+    # METHOD: _uploaded
+    # -------------------------------------------------------------------------
+
+    def _uploaded(
+        self, upload: AttachmentUpload, response: httpx.Response
+    ) -> Attachment:
+        """
+        Check the file store's answer to an upload, and return the attachment.
+
+        Returns:
+            Attachment: The attachment the upload slot was reserved for.
+        """
+        if not response.is_success:
+            self._raise_for_status(response, StorageError)
+        if upload.attachment is None:
+            raise OutlineAPIError(
+                "attachments.create answered without an attachment", status=200
+            )
+
+        return upload.attachment
+
+    # -------------------------------------------------------------------------
+    # METHOD: _attachment_download
+    # -------------------------------------------------------------------------
+
+    def _attachment_download(self, response: httpx.Response) -> AttachmentDownload:
+        """
+        Read an attachment's contents, name, and type from the store's response.
+
+        The name comes from `Content-Disposition` when the store sends one,
+        and otherwise from the last path segment of the URL the redirect led
+        to, which is where S3 keeps an object's file name.
+
+        Returns:
+            AttachmentDownload: The contents with their name and type.
+        """
+        name = filename(response.headers.get("Content-Disposition", "")) or unquote(
+            PurePosixPath(response.url.path).name
+        )
+        content_type = response.headers.get("Content-Type", "").split(";")[0].strip()
+
+        return AttachmentDownload(
+            content=response.content,
+            name=name or None,
+            content_type=content_type or None,
         )

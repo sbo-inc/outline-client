@@ -25,6 +25,7 @@ from outline_client.errors import (
     PaymentRequiredError,
     RateLimitError,
     ServerError,
+    StorageError,
     ValidationError,
 )
 from outline_client.not_given import NOT_GIVEN, NotGiven
@@ -34,6 +35,7 @@ from outline_client.schemas import (
     AnswerResult,
     ApiKey,
     Attachment,
+    AttachmentDownload,
     AttachmentUpload,
     Auth,
     AuthConfig,
@@ -142,6 +144,7 @@ __all__ = [
     "ApiKey",
     "AsyncOutlineClient",
     "Attachment",
+    "AttachmentDownload",
     "AttachmentUpload",
     "Auth",
     "AuthConfig",
@@ -238,6 +241,7 @@ __all__ = [
     "Sorting",
     "Star",
     "StarsResult",
+    "StorageError",
     "Subscription",
     "SuccessResponse",
     "Team",

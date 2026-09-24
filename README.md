@@ -220,9 +220,32 @@ except RateLimitError as exc:
 | `NotFoundError` | 404 | The record does not exist, or is not visible. |
 | `RateLimitError` | 429 | Too many requests in the rate-limit window. |
 | `ServerError` | 5xx | The request failed inside Outline. |
+| `StorageError` | any | The file store refused an attachment upload. |
 
 `OutlineConfigurationError` is raised before any request is made, when the URL
 or token is missing.
+
+### Attachments
+
+`upload_attachment` reserves an attachment and sends its bytes to the file
+store in one call, whichever way the server is configured to take them. The
+attachment's `url` is what a document's markdown links to:
+
+```python
+with open("site-plan.png", "rb") as handle:
+    attachment = outline.upload_attachment(
+        handle, name="site-plan.png", document_id=document_id
+    )
+markdown = f"![Site plan]({attachment.url})"
+
+download = outline.download_attachment(str(attachment.id))
+Path(download.name or "attachment").write_bytes(download.content)
+```
+
+The upload goes to the store directly and carries no API token. A store that
+refuses it raises `StorageError`, a subclass of `OutlineAPIError`. In the CLI,
+`outline attachments upload FILE` uploads a file under its own name, and
+`outline attachments download ID` saves it under the same one.
 
 ### Exports and other background jobs
 
@@ -286,9 +309,9 @@ silently. See `scripts/generate_schemas.py`:
   were found under and disambiguated with a counter, which yields `Operator1`
   and `Field3`. Each is renamed to what it is, e.g. `DocumentFilterOperator`.
 - **Specification corrections.** Places where the specification and the server
-  disagree, verified against a running Outline 1.10: `Permission` is missing
-  `admin`, and a group membership's `permission` is a role within the group
-  (`member`/`admin`), not an access level.
+  disagree, verified against a running Outline 1.10: `Attachment` is missing
+  `id`, `Permission` is missing `admin`, and a group membership's `permission`
+  is a role within the group (`member`/`admin`), not an access level.
 
 A few methods are corrected in the operations layer for the same reason -
 `notifications.list` and `pins.list` are documented as returning an array but

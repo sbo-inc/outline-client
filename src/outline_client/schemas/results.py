@@ -106,11 +106,12 @@ class AttachmentUpload(OutlineBaseModel):
     """
     A pre-authorized upload slot, returned when an attachment record is created.
 
-    Creating an attachment only reserves it; the bytes are uploaded separately
-    by the caller. `mode` says how: `post` means a multipart form POST to
-    `upload_url` with `form` as the accompanying fields, and `put` means a plain
-    PUT of the body to `upload_url` with `headers` applied. Either way the file
-    is readable at `url` once the upload completes.
+    Creating an attachment only reserves it; the bytes are uploaded separately,
+    which `upload_attachment` does in one call. `mode` says how: `post` means a
+    multipart form POST to `upload_url` with `form` as the accompanying fields
+    and the file under `file`, and `put` means a plain PUT of the body to `url`
+    with `headers` applied. Either way the file is readable at
+    `attachment.url` once the upload completes.
     """
 
     max_upload_size: Annotated[float | None, Field(alias="maxUploadSize")] = None
@@ -123,7 +124,8 @@ class AttachmentUpload(OutlineBaseModel):
     """
     upload_url: Annotated[str | None, Field(alias="uploadUrl")] = None
     """
-    The URL to upload the file content to.
+    The URL to POST the upload form to when `mode` is `post`. With local file
+    storage this is a path on Outline itself, `/api/files.create`.
     """
     form: dict[str, Any] = Field(default_factory=dict)
     """
@@ -135,11 +137,41 @@ class AttachmentUpload(OutlineBaseModel):
     """
     url: str | None = None
     """
-    The URL the attachment will be readable at once uploaded.
+    The presigned URL to PUT the file content to when `mode` is `put`. The
+    attachment is readable at `attachment.url`, not here.
     """
     attachment: Attachment | None = None
     """
-    The attachment record that was created.
+    The attachment record that was created. Its `url` is the
+    `/api/attachments.redirect?id=...` path a document's markdown links to.
+    """
+
+
+# =============================================================================
+# CLASS: AttachmentDownload
+# =============================================================================
+
+
+class AttachmentDownload(OutlineBaseModel):
+    """
+    An attachment's contents, with the name and type storage served them under.
+
+    Not a shape Outline sends: the client assembles it from the file store's
+    response to `attachments.redirect`.
+    """
+
+    content: bytes
+    """
+    The attachment's contents.
+    """
+    name: str | None = None
+    """
+    The file name, from the `Content-Disposition` storage sent, or failing
+    that the last path segment of the URL the bytes came from.
+    """
+    content_type: Annotated[str | None, Field(alias="contentType")] = None
+    """
+    The MIME type storage served the contents as.
     """
 
 

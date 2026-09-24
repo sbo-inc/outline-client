@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import click
 
 from outline_client.cli.context import ClientContext
@@ -9,7 +11,7 @@ from outline_client.cli.output import render, write_bytes
 @click.group(name="attachments", cls=CommonClickGroup)
 def group() -> None:
     """
-    List, fetch, and register the files attached to documents.
+    List, upload, download, and register the files attached to documents.
     """
 
 
@@ -67,6 +69,25 @@ def create(
     )
 
 
+@group.command(name="upload")
+@click.argument("file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--document-id", default=None, help="Document to attach it to.")
+@click.pass_obj
+def upload(ctx: ClientContext, file: Path, document_id: str | None) -> None:
+    """
+    Upload a file as an attachment, under its own name.
+
+    The type is guessed from the file name. Link to the printed url from a
+    document's markdown to show the file there.
+    """
+    with file.open("rb") as handle:
+        render(
+            ctx.client.upload_attachment(
+                handle, name=file.name, document_id=document_id
+            )
+        )
+
+
 @group.command(name="create-from-url")
 @click.argument("url")
 @click.option("--document-id", default=None, help="Document to attach it to.")
@@ -91,14 +112,33 @@ def url(ctx: ClientContext, attachment_id: str) -> None:
 @group.command(name="download")
 @click.argument("attachment_id")
 @click.option(
-    "--output", "-o", default=None, help="Write to this path instead of stdout."
+    "--output",
+    "-o",
+    default=None,
+    help="Write to this path, or - for stdout. Defaults to the attachment's name.",
 )
 @click.pass_obj
 def download(ctx: ClientContext, attachment_id: str, output: str | None) -> None:
     """
-    Download an attachment's contents.
+    Download an attachment, saving it under its own name.
+
+    An existing file is not overwritten unless it is named with --output.
     """
-    write_bytes(ctx.client.download_attachment(attachment_id), output)
+    download = ctx.client.download_attachment(attachment_id)
+    if output == "-":
+        write_bytes(download.content, None)
+        return
+    if output is None:
+        # Only the final component of the stored name is used, so a name
+        # cannot write outside the current directory.
+        name = Path(download.name or "").name
+        output = name if name not in {"", ".", ".."} else attachment_id
+        if Path(output).exists():
+            raise click.ClickException(
+                f"{output} already exists; pass --output to choose a path"
+            )
+
+    write_bytes(download.content, output)
 
 
 @group.command(name="delete")

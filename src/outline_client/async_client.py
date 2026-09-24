@@ -77,6 +77,7 @@ from outline_client.schemas.models import (
 )
 from outline_client.schemas.results import (
     AnswerResult,
+    AttachmentDownload,
     AttachmentUpload,
     AuthConfig,
     CollectionGroupMembershipsResult,
@@ -92,7 +93,12 @@ from outline_client.schemas.results import (
     StarsResult,
     UserMembershipsResult,
 )
-from outline_client.transport import DEFAULT_TIMEOUT, BaseOutlineClient, logger
+from outline_client.transport import (
+    DEFAULT_TIMEOUT,
+    BaseOutlineClient,
+    guess_content_type,
+    logger,
+)
 
 # =============================================================================
 # CLASS: AsyncOutlineClient
@@ -222,9 +228,11 @@ class AsyncOutlineClient(BaseOutlineClient):
     # METHOD: _download
     # -------------------------------------------------------------------------
 
-    async def _download(self, path: str, payload: dict[str, Any], accept: str) -> bytes:
+    async def _download(
+        self, path: str, payload: dict[str, Any], accept: str
+    ) -> httpx.Response:
         """
-        POST one API method and return the response body as bytes.
+        POST one API method whose answer is a file, and return the response.
 
         Used by the methods whose response is a file rather than JSON. Outline
         may answer with the bytes directly or with a redirect to storage, so
@@ -233,7 +241,7 @@ class AsyncOutlineClient(BaseOutlineClient):
         host.
 
         Returns:
-            bytes: The response body.
+            httpx.Response: The final response, whose body is the file.
         """
         url = self._endpoint(path)
         logger.info("POST %s", url)
@@ -248,7 +256,7 @@ class AsyncOutlineClient(BaseOutlineClient):
         if not response.is_success:
             self._raise_for_status(response)
 
-        return response.content
+        return response
 
     # -------------------------------------------------------------------------
     # METHOD: paginate
@@ -1912,7 +1920,9 @@ class AsyncOutlineClient(BaseOutlineClient):
             include_child_documents=include_child_documents,
         )
 
-        return await self._download(operation.path, operation.payload, accept)
+        response = await self._download(operation.path, operation.payload, accept)
+
+        return response.content
 
     # -------------------------------------------------------------------------
     # METHOD: import_document
@@ -3130,6 +3140,56 @@ class AsyncOutlineClient(BaseOutlineClient):
         )
 
     # -------------------------------------------------------------------------
+    # METHOD: upload_attachment
+    # -------------------------------------------------------------------------
+
+    async def upload_attachment(
+        self,
+        file: bytes | IO[bytes],
+        *,
+        name: str,
+        content_type: str | None = None,
+        document_id: str | None = None,
+    ) -> Attachment:
+        """
+        Upload a file as an attachment, in one call.
+
+        Reserves the attachment with `create_attachment`, then sends the bytes
+        to the file store the way Outline's reply says to: a PUT to a
+        presigned URL, or a multipart POST to the store's upload URL, which
+        with local storage is Outline itself. The storage request uses this
+        client's timeout and retries, and carries no API token: the store is
+        a different origin, and the reply authorizes the upload on its own.
+
+        Args:
+            file: The file contents, as bytes or an open binary file.
+            name: The file name to store it under.
+            content_type: The MIME type. Guessed from `name` when omitted,
+                falling back to `application/octet-stream`.
+            document_id: The document to attach it to.
+
+        Returns:
+            Attachment: The attachment. Its `url` is the path a document's
+                markdown links to, as in `![Site plan](url)`.
+
+        Raises:
+            StorageError: The file store refused the upload.
+        """
+        content = file if isinstance(file, bytes) else file.read()
+        content_type = content_type or guess_content_type(name)
+        upload = await self.create_attachment(
+            name, content_type, len(content), document_id=document_id
+        )
+
+        request = self._storage_request(
+            upload, content, name=name, content_type=content_type
+        )
+        logger.info("%s %s", request["method"], request["url"])
+        response = await self._http.request(**request)
+
+        return self._uploaded(upload, response)
+
+    # -------------------------------------------------------------------------
     # METHOD: create_attachment_from_url
     # -------------------------------------------------------------------------
 
@@ -3206,16 +3266,21 @@ class AsyncOutlineClient(BaseOutlineClient):
     # METHOD: download_attachment
     # -------------------------------------------------------------------------
 
-    async def download_attachment(self, id: str) -> bytes:
+    async def download_attachment(self, id: str) -> AttachmentDownload:
         """
-        Download an attachment's contents.
+        Download an attachment, with the name and type it was stored under.
+
+        The name is the one in the file store's `Content-Disposition`, or
+        failing that the last path segment of the URL the bytes came from.
 
         Returns:
-            bytes: The attachment's contents.
+            AttachmentDownload: The attachment's contents, name, and type.
         """
-        return await self._download(
+        response = await self._download(
             "attachments.redirect", body(id=id), "application/octet-stream"
         )
+
+        return self._attachment_download(response)
 
     # -------------------------------------------------------------------------
     # METHOD: list_file_operations
@@ -3266,9 +3331,11 @@ class AsyncOutlineClient(BaseOutlineClient):
         Returns:
             bytes: The exported file.
         """
-        return await self._download(
+        response = await self._download(
             "fileOperations.redirect", body(id=id), "application/octet-stream"
         )
+
+        return response.content
 
     # -------------------------------------------------------------------------
     # METHOD: delete_file_operation

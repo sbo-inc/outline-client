@@ -26,6 +26,18 @@ from outline_client.schemas.models import (
 # =============================================================================
 
 
+class TestAttachment:
+    def test_has_its_id(self) -> None:
+        # The specification leaves `id` out; the server sends it, and it is
+        # the only way to name the attachment to the other attachment methods.
+        attachment = Attachment.model_validate(
+            {"id": "9884b98e-3c7b-4a8a-964d-c64ce9002d21"}
+        )
+
+        assert str(attachment.id) == "9884b98e-3c7b-4a8a-964d-c64ce9002d21"
+        assert attachment.__pydantic_extra__ == {}
+
+
 class TestPermission:
     def test_admin_is_a_permission(self) -> None:
         # The specification lists only read and read_write; Outline's own

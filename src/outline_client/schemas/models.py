@@ -45,6 +45,10 @@ class AccessRequestStatus(StrEnum):
 
 
 class Attachment(OutlineBaseModel):
+    id: UUID | None = None
+    """
+    Unique identifier for the attachment.
+    """
     content_type: Annotated[
         str | None, Field(alias="contentType", examples=["image/png"])
     ] = None
