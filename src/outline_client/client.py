@@ -4,6 +4,7 @@ from typing import IO, Any, Self
 
 import httpx
 
+from outline_client.not_given import NOT_GIVEN, NotGiven
 from outline_client.operations import access_requests as access_request_ops
 from outline_client.operations import api_keys as api_key_ops
 from outline_client.operations import attachments as attachment_ops
@@ -180,9 +181,9 @@ class OutlineClient(BaseOutlineClient):
 
         The escape hatch beneath the typed methods, for the three things they
         deliberately do not offer: reading the `policies` and `pagination` a
-        response carries alongside its `data`, sending a field as an explicit
-        JSON `null` rather than omitting it, and calling a method this release
-        does not yet cover.
+        response carries alongside its `data`, sending an explicit JSON `null`
+        for a field they do not accept as null, and calling a method this
+        release does not yet cover.
 
         Returns:
             dict[str, Any]: The decoded JSON response body.
@@ -437,11 +438,13 @@ class OutlineClient(BaseOutlineClient):
         *,
         name: str | None = None,
         language: str | None = None,
-        avatar_url: str | None = None,
+        avatar_url: str | None | NotGiven = NOT_GIVEN,
         preferences: dict[str, Any] | None = None,
     ) -> User:
         """
         Update the calling user's own profile.
+
+        `avatar_url=None` sends a JSON null, which removes the avatar.
 
         This method always acts on the token's own user; changing somebody
         else's record is done through `update_user_role`, `suspend_user`, and
@@ -906,15 +909,20 @@ class OutlineClient(BaseOutlineClient):
         id: str,
         *,
         name: str | None = None,
-        description: str | None = None,
-        data: dict[str, Any] | None = None,
-        permission: Permission | str | None = None,
-        icon: str | None = None,
-        color: str | None = None,
+        description: str | None | NotGiven = NOT_GIVEN,
+        data: dict[str, Any] | None | NotGiven = NOT_GIVEN,
+        permission: Permission | str | None | NotGiven = NOT_GIVEN,
+        icon: str | None | NotGiven = NOT_GIVEN,
+        color: str | None | NotGiven = NOT_GIVEN,
         sharing: bool | None = None,
     ) -> Collection:
         """
         Update a collection, leaving the fields you omit as they are.
+
+        `description`, `data`, `permission`, `icon`, and `color` send `None`
+        as a JSON null rather than leaving the field out, which clears the
+        field. `permission=None` makes the collection private to its
+        members.
 
         Returns:
             Collection: The updated collection.
@@ -1367,12 +1375,12 @@ class OutlineClient(BaseOutlineClient):
         *,
         title: str | None = None,
         text: str | None = None,
-        icon: str | None = None,
-        color: str | None = None,
+        icon: str | None | NotGiven = NOT_GIVEN,
+        color: str | None | NotGiven = NOT_GIVEN,
         full_width: bool | None = None,
-        preferences: DocumentPreferences | None = None,
-        template_id: str | None = None,
-        collection_id: str | None = None,
+        preferences: DocumentPreferences | None | NotGiven = NOT_GIVEN,
+        template_id: str | None | NotGiven = NOT_GIVEN,
+        collection_id: str | None | NotGiven = NOT_GIVEN,
         insights_enabled: bool | None = None,
         edit_mode: TextEditMode | str | None = None,
         find_text: str | None = None,
@@ -1382,6 +1390,10 @@ class OutlineClient(BaseOutlineClient):
     ) -> Document:
         """
         Update a document, leaving the fields you omit as they are.
+
+        `icon`, `color`, `preferences`, `template_id`, and `collection_id`
+        send `None` as a JSON null rather than leaving the field out, so
+        `icon=None` clears the icon.
 
         `text` replaces the whole body by default. `edit_mode` changes that:
         `append` and `prepend` add to it, and `patch` replaces the occurrence
@@ -1434,12 +1446,16 @@ class OutlineClient(BaseOutlineClient):
         self,
         id: str,
         *,
-        collection_id: str | None = None,
-        parent_document_id: str | None = None,
+        collection_id: str | None | NotGiven = NOT_GIVEN,
+        parent_document_id: str | None | NotGiven = NOT_GIVEN,
         index: float | None = None,
     ) -> DocumentMoveResult:
         """
         Move a document to another collection or under another parent.
+
+        `collection_id` and `parent_document_id` send `None` as a JSON null
+        rather than leaving the field out. Either way, a document moved
+        without a parent lands at the root of its collection.
 
         Returns:
             DocumentMoveResult: The documents that moved and the collections
@@ -2193,14 +2209,18 @@ class OutlineClient(BaseOutlineClient):
         *,
         title: str | None = None,
         data: dict[str, Any] | None = None,
-        icon: str | None = None,
-        color: str | None = None,
+        icon: str | None | NotGiven = NOT_GIVEN,
+        color: str | None | NotGiven = NOT_GIVEN,
         full_width: bool | None = None,
-        collection_id: str | None = None,
+        collection_id: str | None | NotGiven = NOT_GIVEN,
         publish: bool | None = None,
     ) -> Template:
         """
         Update a template, leaving the fields you omit as they are.
+
+        `icon`, `color`, and `collection_id` send `None` as a JSON null
+        rather than leaving the field out. `collection_id=None` makes the
+        template available across the whole workspace.
 
         Returns:
             Template: The updated template.
@@ -2677,11 +2697,14 @@ class OutlineClient(BaseOutlineClient):
         id: str,
         published: bool,
         *,
-        title: str | None = None,
-        icon_url: str | None = None,
+        title: str | None | NotGiven = NOT_GIVEN,
+        icon_url: str | None | NotGiven = NOT_GIVEN,
     ) -> Share:
         """
         Publish or unpublish a share, and set how it presents itself.
+
+        `title` and `icon_url` send `None` as a JSON null rather than
+        leaving the field out, which clears the field.
 
         Returns:
             Share: The updated share.
@@ -2985,11 +3008,14 @@ class OutlineClient(BaseOutlineClient):
         self,
         id: str,
         *,
-        viewed_at: datetime | str | None = None,
-        archived_at: datetime | str | None = None,
+        viewed_at: datetime | str | None | NotGiven = NOT_GIVEN,
+        archived_at: datetime | str | None | NotGiven = NOT_GIVEN,
     ) -> Notification:
         """
         Mark one notification as read or archived.
+
+        `viewed_at=None` marks it unread again, and `archived_at=None`
+        takes it out of the archive.
 
         Returns:
             Notification: The updated notification.
@@ -3595,15 +3621,19 @@ class OutlineClient(BaseOutlineClient):
         id: str,
         *,
         name: str | None = None,
-        description: str | None = None,
-        developer_name: str | None = None,
-        developer_url: str | None = None,
-        avatar_url: str | None = None,
+        description: str | None | NotGiven = NOT_GIVEN,
+        developer_name: str | None | NotGiven = NOT_GIVEN,
+        developer_url: str | None | NotGiven = NOT_GIVEN,
+        avatar_url: str | None | NotGiven = NOT_GIVEN,
         redirect_uris: list[str] | None = None,
         published: bool | None = None,
     ) -> OAuthClient:
         """
         Update an OAuth application.
+
+        `description`, `developer_name`, `developer_url`, and `avatar_url`
+        send `None` as a JSON null rather than leaving the field out, which
+        clears the field.
 
         Returns:
             OAuthClient: The updated client.

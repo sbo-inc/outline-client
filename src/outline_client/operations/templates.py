@@ -1,6 +1,14 @@
 from typing import Any
 
-from outline_client.operations.generic import Operation, body, many, one, success
+from outline_client.not_given import NOT_GIVEN, NotGiven
+from outline_client.operations.generic import (
+    Operation,
+    body,
+    many,
+    nullable,
+    one,
+    success,
+)
 from outline_client.schemas.models import SortDirection, Template
 
 # -----------------------------------------------------------------------------
@@ -102,10 +110,10 @@ def update_template(
     *,
     title: str | None = None,
     data: dict[str, Any] | None = None,
-    icon: str | None = None,
-    color: str | None = None,
+    icon: str | None | NotGiven = NOT_GIVEN,
+    color: str | None | NotGiven = NOT_GIVEN,
     full_width: bool | None = None,
-    collection_id: str | None = None,
+    collection_id: str | None | NotGiven = NOT_GIVEN,
     publish: bool | None = None,
 ) -> Operation[Template]:
     """
@@ -120,12 +128,10 @@ def update_template(
             id=id,
             title=title,
             data=data,
-            icon=icon,
-            color=color,
             fullWidth=full_width,
-            collectionId=collection_id,
             publish=publish,
-        ),
+        )
+        | nullable(icon=icon, color=color, collectionId=collection_id),
         parse=one(Template),
     )
 

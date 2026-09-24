@@ -27,6 +27,7 @@ from outline_client.errors import (
     ServerError,
     ValidationError,
 )
+from outline_client.not_given import NOT_GIVEN, NotGiven
 from outline_client.schemas import (
     AccessRequest,
     AccessRequestStatus,
@@ -202,8 +203,10 @@ __all__ = [
     "ListResponse",
     "Membership",
     "MembershipsResult",
+    "NOT_GIVEN",
     "NavigationNode",
     "NotFoundError",
+    "NotGiven",
     "Notification",
     "OAuthAuthentication",
     "OAuthClient",

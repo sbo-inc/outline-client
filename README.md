@@ -239,11 +239,26 @@ while outline.get_file_operation(operation_id).state in {"creating", "uploading"
 Path("handbook.zip").write_bytes(outline.download_file_operation(operation_id))
 ```
 
+### Clearing a field
+
+A method leaves an argument at `None` out of the request. The few fields
+Outline accepts as JSON null - a document's `icon`, a collection's
+`permission`, a notification's `viewed_at` - default to `NOT_GIVEN` instead,
+so `None` sends the null that clears them:
+
+```python
+outline.update_document(document_id, icon=None)  # clears the icon
+outline.update_document(document_id, title="Renamed")  # leaves it alone
+```
+
+In the CLI, `--clear FIELD` sends the null: `outline documents update ID
+--clear icon`.
+
 ### The escape hatch
 
 Client methods return the `data` a response carries. The `policies` and
-`pagination` beside it, an explicit JSON `null`, and any method a release does
-not yet cover are all reachable through `request`:
+`pagination` beside it, a JSON `null` for any other field, and any method a
+release does not yet cover are all reachable through `request`:
 
 ```python
 body = outline.request("documents.info", {"id": document_id})

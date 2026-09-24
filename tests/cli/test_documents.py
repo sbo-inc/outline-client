@@ -189,3 +189,50 @@ class TestOutput:
 
         assert result.exit_code == 0
         assert target.read_bytes() == b"<html></html>"
+
+
+# =============================================================================
+# TESTS: Clearing a field
+# =============================================================================
+
+
+class TestClear:
+    def test_an_option_left_off_is_not_sent_as_null(
+        self, run: Callable[..., Any]
+    ) -> None:
+        # The client sends `None` as null on these fields, so the CLI must
+        # not hand it an unset option as `None`.
+        seen: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.update(body(request))
+            return ok(DOCUMENT)
+
+        run(handler, ["documents", "update", DOCUMENT_ID, "--title", "Renamed"])
+
+        assert seen == {"id": DOCUMENT_ID, "title": "Renamed"}
+
+    def test_clear_sends_the_field_as_null(self, run: Callable[..., Any]) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.update(body(request))
+            return ok(DOCUMENT)
+
+        result = run(
+            handler,
+            ["documents", "update", DOCUMENT_ID, "--clear", "icon", "--clear", "color"],
+        )
+
+        assert result.exit_code == 0
+        assert seen == {"id": DOCUMENT_ID, "icon": None, "color": None}
+
+    def test_refuses_a_value_and_a_clear_for_one_field(
+        self, run: Callable[..., Any]
+    ) -> None:
+        result = run(
+            lambda request: ok(DOCUMENT),
+            ["documents", "update", DOCUMENT_ID, "--icon", "x", "--clear", "icon"],
+        )
+
+        assert result.exit_code != 0

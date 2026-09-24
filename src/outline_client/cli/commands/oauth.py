@@ -2,7 +2,7 @@ import click
 
 from outline_client.cli.context import ClientContext
 from outline_client.cli.group import CommonClickGroup
-from outline_client.cli.options import pagination_options
+from outline_client.cli.options import clear_option, clearable, pagination_options
 from outline_client.cli.output import render
 
 
@@ -86,6 +86,7 @@ def create(
 @click.option(
     "--published/--unpublished", default=None, help="List it for the workspace."
 )
+@clear_option("description", "developer-name", "developer-url", "avatar-url")
 @click.pass_obj
 def update(
     ctx: ClientContext,
@@ -97,6 +98,7 @@ def update(
     developer_url: str | None,
     avatar_url: str | None,
     published: bool | None,
+    clear: tuple[str, ...],
 ) -> None:
     """
     Update an OAuth application.
@@ -106,10 +108,10 @@ def update(
             oauth_client_id,
             name=name,
             redirect_uris=list(redirect_uri) or None,
-            description=description,
-            developer_name=developer_name,
-            developer_url=developer_url,
-            avatar_url=avatar_url,
+            description=clearable(description, "description", clear),
+            developer_name=clearable(developer_name, "developer-name", clear),
+            developer_url=clearable(developer_url, "developer-url", clear),
+            avatar_url=clearable(avatar_url, "avatar-url", clear),
             published=published,
         )
     )

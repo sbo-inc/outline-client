@@ -225,6 +225,19 @@ class TestDocumentLifecycle:
         assert "The first paragraph." in markdown
         assert "Appended." in markdown
 
+    def test_clears_an_icon_with_an_explicit_null(
+        self, client: OutlineClient, document: Document
+    ) -> None:
+        client.update_document(str(document.id), icon="rocket", color="#FF0000")
+
+        # Left out, the icon is kept; `None` sends the null that clears it.
+        kept = client.update_document(str(document.id), title="Renamed")
+        assert kept.icon == "rocket"
+
+        cleared = client.update_document(str(document.id), icon=None, color=None)
+        assert cleared.icon is None
+        assert cleared.color is None
+
     def test_archives_and_restores(
         self, client: OutlineClient, document: Document
     ) -> None:

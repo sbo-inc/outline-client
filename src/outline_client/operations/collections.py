@@ -1,6 +1,14 @@
 from typing import Any
 
-from outline_client.operations.generic import Operation, body, many, one, success
+from outline_client.not_given import NOT_GIVEN, NotGiven
+from outline_client.operations.generic import (
+    Operation,
+    body,
+    many,
+    nullable,
+    one,
+    success,
+)
 from outline_client.schemas.models import (
     Collection,
     CollectionFilterCondition,
@@ -136,11 +144,11 @@ def update_collection(
     id: str,
     *,
     name: str | None = None,
-    description: str | None = None,
-    data: dict[str, Any] | None = None,
-    permission: Permission | str | None = None,
-    icon: str | None = None,
-    color: str | None = None,
+    description: str | None | NotGiven = NOT_GIVEN,
+    data: dict[str, Any] | None | NotGiven = NOT_GIVEN,
+    permission: Permission | str | None | NotGiven = NOT_GIVEN,
+    icon: str | None | NotGiven = NOT_GIVEN,
+    color: str | None | NotGiven = NOT_GIVEN,
     sharing: bool | None = None,
 ) -> Operation[Collection]:
     """
@@ -151,15 +159,13 @@ def update_collection(
     """
     return Operation(
         path="collections.update",
-        payload=body(
-            id=id,
-            name=name,
+        payload=body(id=id, name=name, sharing=sharing)
+        | nullable(
             description=description,
             data=data,
             permission=permission,
             icon=icon,
             color=color,
-            sharing=sharing,
         ),
         parse=one(Collection),
     )

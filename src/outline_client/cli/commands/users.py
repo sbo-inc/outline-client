@@ -2,7 +2,13 @@ import click
 
 from outline_client.cli.context import ClientContext
 from outline_client.cli.group import CommonClickGroup
-from outline_client.cli.options import pagination_options, parse_json, sorting_options
+from outline_client.cli.options import (
+    clear_option,
+    clearable,
+    pagination_options,
+    parse_json,
+    sorting_options,
+)
 from outline_client.cli.output import render
 from outline_client.schemas.models import Invite
 
@@ -116,6 +122,7 @@ def resend_invite(ctx: ClientContext, user_id: str) -> None:
 @click.option("--language", default=None, help="New interface language, e.g. en_US.")
 @click.option("--avatar-url", default=None, help="New avatar URL.")
 @click.option("--preferences", default=None, help="Preferences to set, as JSON.")
+@clear_option("avatar-url")
 @click.pass_obj
 def update(
     ctx: ClientContext,
@@ -123,6 +130,7 @@ def update(
     language: str | None,
     avatar_url: str | None,
     preferences: str | None,
+    clear: tuple[str, ...],
 ) -> None:
     """
     Update the calling user's own profile.
@@ -131,7 +139,7 @@ def update(
         ctx.client.update_user(
             name=name,
             language=language,
-            avatar_url=avatar_url,
+            avatar_url=clearable(avatar_url, "avatar-url", clear),
             preferences=parse_json(preferences),
         )
     )

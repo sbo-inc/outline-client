@@ -1,9 +1,11 @@
 from datetime import date, datetime
 
+from outline_client.not_given import NOT_GIVEN, NotGiven
 from outline_client.operations.generic import (
     Operation,
     body,
     many,
+    nullable,
     one,
     success,
     whole,
@@ -189,12 +191,12 @@ def update_document(
     *,
     title: str | None = None,
     text: str | None = None,
-    icon: str | None = None,
-    color: str | None = None,
+    icon: str | None | NotGiven = NOT_GIVEN,
+    color: str | None | NotGiven = NOT_GIVEN,
     full_width: bool | None = None,
-    preferences: DocumentPreferences | None = None,
-    template_id: str | None = None,
-    collection_id: str | None = None,
+    preferences: DocumentPreferences | None | NotGiven = NOT_GIVEN,
+    template_id: str | None | NotGiven = NOT_GIVEN,
+    collection_id: str | None | NotGiven = NOT_GIVEN,
     insights_enabled: bool | None = None,
     edit_mode: TextEditMode | str | None = None,
     find_text: str | None = None,
@@ -214,18 +216,20 @@ def update_document(
             id=id,
             title=title,
             text=text,
-            icon=icon,
-            color=color,
             fullWidth=full_width,
-            preferences=preferences,
-            templateId=template_id,
-            collectionId=collection_id,
             insightsEnabled=insights_enabled,
             editMode=edit_mode,
             findText=find_text,
             publish=publish,
             lastRevision=last_revision,
             dataAttributes=data_attributes,
+        )
+        | nullable(
+            icon=icon,
+            color=color,
+            preferences=preferences,
+            templateId=template_id,
+            collectionId=collection_id,
         ),
         parse=one(Document),
     )
@@ -262,8 +266,8 @@ def delete_document(
 def move_document(
     id: str,
     *,
-    collection_id: str | None = None,
-    parent_document_id: str | None = None,
+    collection_id: str | None | NotGiven = NOT_GIVEN,
+    parent_document_id: str | None | NotGiven = NOT_GIVEN,
     index: float | None = None,
 ) -> Operation[DocumentMoveResult]:
     """
@@ -274,12 +278,8 @@ def move_document(
     """
     return Operation(
         path="documents.move",
-        payload=body(
-            id=id,
-            collectionId=collection_id,
-            parentDocumentId=parent_document_id,
-            index=index,
-        ),
+        payload=body(id=id, index=index)
+        | nullable(collectionId=collection_id, parentDocumentId=parent_document_id),
         parse=one(DocumentMoveResult),
     )
 
