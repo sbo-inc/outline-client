@@ -107,6 +107,7 @@ from outline_client.schemas.models import (
 )
 from outline_client.schemas.results import (
     AnswerResult,
+    AttachmentDownload,
     AttachmentUpload,
     AuthConfig,
     AuthService,
@@ -130,6 +131,7 @@ __all__ = [
     "AnswerResult",
     "ApiKey",
     "Attachment",
+    "AttachmentDownload",
     "AttachmentUpload",
     "Auth",
     "AuthConfig",

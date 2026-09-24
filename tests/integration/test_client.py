@@ -531,6 +531,25 @@ class TestFileOperations:
 
         client.delete_attachment(str(upload.attachment.id))
 
+    def test_uploads_an_attachment_and_downloads_it_by_name(
+        self, client: OutlineClient, document: Document
+    ) -> None:
+        # The container uses local file storage, so the upload is a multipart
+        # POST to the relative `/api/files.create`, authorized by the form's
+        # signature rather than the token.
+        attachment = client.upload_attachment(
+            b"# Notes\n", name="notes.md", document_id=str(document.id)
+        )
+        try:
+            assert attachment.url == f"/api/attachments.redirect?id={attachment.id}"
+
+            download = client.download_attachment(str(attachment.id))
+            assert download.content == b"# Notes\n"
+            assert download.name == "notes.md"
+            assert download.content_type == "text/markdown"
+        finally:
+            client.delete_attachment(str(attachment.id))
+
 
 # =============================================================================
 # TESTS: What this edition does not serve

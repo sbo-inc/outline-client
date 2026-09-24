@@ -132,6 +132,17 @@ RENAMED_CLASSES = {
 # is how a specification fix gets noticed.
 
 PATCHES: list[tuple[str, str]] = [
+    # `Attachment` is missing `id`. Outline's attachment presenter sends it,
+    # and it is the only way to name the attachment to `attachments.delete`
+    # or `attachments.redirect`.
+    (
+        "class Attachment(OutlineBaseModel):\n",
+        "class Attachment(OutlineBaseModel):\n"
+        "    id: UUID | None = None\n"
+        '    """\n'
+        "    Unique identifier for the attachment.\n"
+        '    """\n',
+    ),
     # `Permission` is missing `admin`. Outline's own `CollectionPermission`
     # and `DocumentPermission` enums have three members, and a collection's
     # `templateManagement` comes back as `admin` on a default installation.

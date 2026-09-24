@@ -192,6 +192,22 @@ class ServerError(OutlineAPIError):
 
 
 # =============================================================================
+# CLASS: StorageError
+# =============================================================================
+
+
+class StorageError(OutlineAPIError):
+    """
+    Raised when the file store refuses an attachment's upload.
+
+    The bytes go to the file store directly rather than through Outline's API:
+    to S3 or a compatible service, or to Outline itself with local storage. A
+    failure there is not one of the API's own, so it has this one class, and
+    `status` is the store's status code rather than Outline's.
+    """
+
+
+# =============================================================================
 # CONSTANT: STATUS_ERRORS
 # =============================================================================
 #
