@@ -105,13 +105,20 @@ def create(
 
 @group.command(name="update")
 @click.argument("comment_id")
-@click.argument("data")
+@click.argument("data", required=False)
+@click.option(
+    "--text",
+    default=None,
+    help="New body, as markdown. Needs an Outline release after v1.10.1.",
+)
 @click.pass_obj
-def update(ctx: ClientContext, comment_id: str, data: str) -> None:
+def update(
+    ctx: ClientContext, comment_id: str, data: str | None, text: str | None
+) -> None:
     """
-    Replace a comment's body, given as a rich-text JSON document.
+    Replace a comment's body, given as rich-text JSON or as markdown with --text.
     """
-    render(ctx.client.update_comment(comment_id, parse_json(data)))
+    render(ctx.client.update_comment(comment_id, parse_json(data), text=text))
 
 
 @group.command(name="delete")

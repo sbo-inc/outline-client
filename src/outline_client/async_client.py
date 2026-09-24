@@ -2407,14 +2407,30 @@ class AsyncOutlineClient(BaseOutlineClient):
     # METHOD: update_comment
     # -------------------------------------------------------------------------
 
-    async def update_comment(self, id: str, data: dict[str, Any]) -> Comment:
+    async def update_comment(
+        self,
+        id: str,
+        data: dict[str, Any] | None = None,
+        *,
+        text: str | None = None,
+    ) -> Comment:
         """
         Replace a comment's body.
+
+        Give the new body as `data` or as `text`; Outline rejects a call that
+        has neither.
+
+        Args:
+            id: The comment to update.
+            data: The new body as a rich-text document.
+            text: The new body as markdown, if `data` is not given. Needs an
+                Outline release after v1.10.1; an older server answers with
+                `ValidationError`.
 
         Returns:
             Comment: The updated comment.
         """
-        return await self._run(comment_ops.update_comment(id, data))
+        return await self._run(comment_ops.update_comment(id, data, text=text))
 
     # -------------------------------------------------------------------------
     # METHOD: delete_comment

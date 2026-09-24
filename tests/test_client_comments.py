@@ -16,6 +16,7 @@ type ClientFactory = Callable[..., OutlineClient]
 type AsyncClientFactory = Callable[..., AsyncOutlineClient]
 
 THREAD_ID = "9884b98e-3c7b-4a8a-964d-c64ce9002d21"
+COMMENT_ID = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
 
 
 # =============================================================================
@@ -52,3 +53,27 @@ class TestListComments:
             "statusFilter": ["unresolved"],
         }
         assert seen == [expected, expected]
+
+
+# =============================================================================
+# TESTS: update_comment
+# =============================================================================
+
+
+class TestUpdateComment:
+    def test_sends_a_markdown_body_without_a_rich_text_one(
+        self, make_client: ClientFactory
+    ) -> None:
+        # `data` is left out rather than sent as null, so Outline builds the
+        # body from `text` alone.
+        seen: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.update(body(request))
+            return ok({"id": COMMENT_ID})
+
+        make_client(handler).update_comment(
+            COMMENT_ID, text="Updated after **review**."
+        )
+
+        assert seen == {"id": COMMENT_ID, "text": "Updated after **review**."}
