@@ -6,6 +6,8 @@ from typing import Any
 import click
 from pydantic import BaseModel
 
+from outline_client.prosemirror import to_markdown
+
 type Renderable = BaseModel | Sequence[BaseModel] | dict[str, Any] | str | bool | None
 
 # =============================================================================
@@ -13,7 +15,9 @@ type Renderable = BaseModel | Sequence[BaseModel] | dict[str, Any] | str | bool 
 # =============================================================================
 
 
-def render(value: Renderable, *, exclude: set[str] | None = None) -> None:
+def render(
+    value: Renderable, *, exclude: set[str] | None = None, markdown: bool = False
+) -> None:
     """
     Print a command's result to stdout.
 
@@ -24,6 +28,10 @@ def render(value: Renderable, *, exclude: set[str] | None = None) -> None:
 
     `exclude` drops the named top-level fields, which is how a newly created
     API key's secret is kept out of a log.
+
+    `markdown` swaps each record's rich-text `data` for its markdown rendering,
+    under `text` - the name Outline gives a document's markdown body - so a
+    template or comment body can be read without a ProseMirror parser.
     """
     if value is None:
         return
@@ -36,13 +44,34 @@ def render(value: Renderable, *, exclude: set[str] | None = None) -> None:
 
     payload: object
     if isinstance(value, BaseModel):
-        payload = value.model_dump(mode="json", exclude=exclude)
+        payload = dump(value, exclude=exclude, markdown=markdown)
     elif isinstance(value, dict):
         payload = value
     else:
-        payload = [item.model_dump(mode="json", exclude=exclude) for item in value]
+        payload = [dump(item, exclude=exclude, markdown=markdown) for item in value]
 
     click.echo(json.dumps(payload, indent=2, default=str))
+
+
+# =============================================================================
+# FUNCTION: dump
+# =============================================================================
+
+
+def dump(
+    record: BaseModel, *, exclude: set[str] | None = None, markdown: bool = False
+) -> dict[str, Any]:
+    """
+    Serialize one record for printing.
+
+    Returns:
+        dict[str, Any]: The record as JSON-ready data.
+    """
+    payload = record.model_dump(mode="json", exclude=exclude)
+    if markdown:
+        payload["text"] = to_markdown(payload.pop("data", None))
+
+    return payload
 
 
 # =============================================================================

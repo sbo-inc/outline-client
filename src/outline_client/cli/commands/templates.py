@@ -16,6 +16,11 @@ def group() -> None:
 @group.command(name="list")
 @click.option("--collection-id", default=None, help="Limit to one collection.")
 @click.option("--query", default=None, help="Match template titles against this text.")
+@click.option(
+    "--markdown",
+    is_flag=True,
+    help="Print the body as markdown, under text, in place of the rich-text data.",
+)
 @pagination_options
 @sorting_options
 @click.pass_obj
@@ -23,6 +28,7 @@ def list_(
     ctx: ClientContext,
     collection_id: str | None,
     query: str | None,
+    markdown: bool,
     offset: int | None,
     limit: int | None,
     sort: str | None,
@@ -39,18 +45,24 @@ def list_(
             limit=limit,
             sort=sort,
             direction=direction,
-        )
+        ),
+        markdown=markdown,
     )
 
 
 @group.command(name="get")
 @click.argument("template_id")
+@click.option(
+    "--markdown",
+    is_flag=True,
+    help="Print the body as markdown, under text, in place of the rich-text data.",
+)
 @click.pass_obj
-def get(ctx: ClientContext, template_id: str) -> None:
+def get(ctx: ClientContext, template_id: str, markdown: bool) -> None:
     """
     Show one template.
     """
-    render(ctx.client.get_template(template_id))
+    render(ctx.client.get_template(template_id), markdown=markdown)
 
 
 @group.command(name="create")

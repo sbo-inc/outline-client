@@ -176,6 +176,25 @@ recent_drafts = outline.list_documents(
 )
 ```
 
+### Rich-text bodies
+
+Outline sends template and comment bodies only as the rich-text JSON its editor
+stores, in `data`. `to_markdown` renders one as markdown, spelled the way
+Outline's own export spells it, so it can go back through a `text` argument:
+
+```python
+from outline_client.prosemirror import to_markdown
+
+template = outline.get_template(template_id)
+print(to_markdown(template.data))
+```
+
+The conversion is lossy. Image sizes, table alignment, and the comment and
+placeholder marks have no markdown form, so a caller that syncs or round-trips
+content should keep `data` as Outline sent it. In the CLI, `--markdown` on
+`templates get`, `templates list`, `comments get`, and `comments list` swaps
+each record's `data` for a `text` field holding the markdown.
+
 ### Errors
 
 A failed call raises a subclass of `OutlineAPIError` chosen by the HTTP status,

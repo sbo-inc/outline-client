@@ -28,6 +28,11 @@ def group() -> None:
     help="Limit to resolved or unresolved threads. Repeatable.",
 )
 @click.option("--anchor-text", is_flag=True, help="Include the anchored passages.")
+@click.option(
+    "--markdown",
+    is_flag=True,
+    help="Print the body as markdown, under text, in place of the rich-text data.",
+)
 @pagination_options
 @sorting_options
 @click.pass_obj
@@ -38,6 +43,7 @@ def list_(
     parent_comment_id: str | None,
     statuses: tuple[str, ...],
     anchor_text: bool,
+    markdown: bool,
     offset: int | None,
     limit: int | None,
     sort: str | None,
@@ -57,19 +63,28 @@ def list_(
             limit=limit,
             sort=sort,
             direction=direction,
-        )
+        ),
+        markdown=markdown,
     )
 
 
 @group.command(name="get")
 @click.argument("comment_id")
 @click.option("--anchor-text", is_flag=True, help="Include the anchored passage.")
+@click.option(
+    "--markdown",
+    is_flag=True,
+    help="Print the body as markdown, under text, in place of the rich-text data.",
+)
 @click.pass_obj
-def get(ctx: ClientContext, comment_id: str, anchor_text: bool) -> None:
+def get(ctx: ClientContext, comment_id: str, anchor_text: bool, markdown: bool) -> None:
     """
     Show one comment.
     """
-    render(ctx.client.get_comment(comment_id, include_anchor_text=anchor_text or None))
+    render(
+        ctx.client.get_comment(comment_id, include_anchor_text=anchor_text or None),
+        markdown=markdown,
+    )
 
 
 @group.command(name="create")
