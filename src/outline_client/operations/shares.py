@@ -1,3 +1,5 @@
+from typing import Any
+
 from outline_client.not_given import NOT_GIVEN, NotGiven
 from outline_client.operations.generic import (
     Operation,
@@ -8,6 +10,7 @@ from outline_client.operations.generic import (
     success,
 )
 from outline_client.schemas.models import Share, SortDirection
+from outline_client.schemas.results import SharesResult
 
 # -----------------------------------------------------------------------------
 # OPERATION: list_shares
@@ -50,18 +53,29 @@ def get_share(
     id: str | None = None,
     *,
     document_id: str | None = None,
-) -> Operation[Share]:
+    collection_id: str | None = None,
+) -> Operation[SharesResult]:
     """
     Build the `shares.info` operation.
 
     Returns:
-        Operation[Share]: The get share operation.
+        Operation[SharesResult]: The get share operation.
     """
     return Operation(
         path="shares.info",
-        payload=body(id=id, documentId=document_id),
-        parse=one(Share),
+        payload=body(id=id, documentId=document_id, collectionId=collection_id),
+        parse=parse_shares,
     )
+
+
+def parse_shares(data: dict[str, Any]) -> SharesResult:
+    """
+    Parse `shares.info`, whose 204 for a resource with no share has no `data`.
+
+    Returns:
+        SharesResult: The shares found, which may be none.
+    """
+    return SharesResult.model_validate(data.get("data") or {})
 
 
 # -----------------------------------------------------------------------------

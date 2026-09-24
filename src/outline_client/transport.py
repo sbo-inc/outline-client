@@ -280,9 +280,15 @@ class BaseOutlineClient:
         """
         Decode a successful response body, which is always a JSON object.
 
+        A 204 has no body at all, and reads as an empty one: `shares.info`
+        answers that way for a document that has no share.
+
         Returns:
             dict[str, Any]: The decoded JSON response body.
         """
+        if response.status_code == httpx.codes.NO_CONTENT:
+            return {}
+
         try:
             data: Any = json.loads(response.text)
         except ValueError as exc:

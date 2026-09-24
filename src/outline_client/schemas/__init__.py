@@ -121,6 +121,7 @@ from outline_client.schemas.results import (
     InvitesResult,
     MembershipsResult,
     SearchHit,
+    SharesResult,
     StarsResult,
     UserMembershipsResult,
 )
@@ -212,6 +213,7 @@ __all__ = [
     "SearchResult",
     "SearchResultSource",
     "Share",
+    "SharesResult",
     "SortDirection",
     "Sorting",
     "Star",

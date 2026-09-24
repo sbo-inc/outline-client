@@ -90,6 +90,7 @@ from outline_client.schemas.results import (
     InvitesResult,
     MembershipsResult,
     SearchHit,
+    SharesResult,
     StarsResult,
     UserMembershipsResult,
 )
@@ -2664,14 +2665,25 @@ class OutlineClient(BaseOutlineClient):
         id: str | None = None,
         *,
         document_id: str | None = None,
-    ) -> Share:
+        collection_id: str | None = None,
+    ) -> SharesResult:
         """
-        Retrieve one share, by its own id or by the document it shares.
+        Look up a share by its own id, or the shares on a document or collection.
+
+        By `id`, which is how a public link loads, only a published share is
+        found, and it comes with the document or collection it exposes. By
+        `document_id` or `collection_id`, the result holds that resource's own
+        share and the parent share that covers it; `shares` is empty when
+        there are none.
 
         Returns:
-            Share: The share.
+            SharesResult: The shares found, with what a public link exposes.
         """
-        return self._run(share_ops.get_share(id, document_id=document_id))
+        return self._run(
+            share_ops.get_share(
+                id, document_id=document_id, collection_id=collection_id
+            )
+        )
 
     # -------------------------------------------------------------------------
     # METHOD: create_share
