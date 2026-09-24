@@ -3,14 +3,17 @@ The models this client speaks in.
 
 `models` is generated from the Outline OpenAPI specification and holds the
 schemas the specification names; `results` holds the composite `data` shapes it
-leaves anonymous; `envelopes` holds the wrappers those payloads arrive in.
-Everything from all three is re-exported here, so a caller imports from
-`outline_client.schemas` rather than tracking which of the three a model came
-from.
+leaves anonymous; `enums` holds the request enums it leaves out; `envelopes`
+holds the wrappers those payloads arrive in. Everything from all four is
+re-exported here, so a caller imports from `outline_client.schemas` rather than
+tracking which of the four a model came from.
 """
 
 from outline_client.schemas.base import (
     OutlineBaseModel,
+)
+from outline_client.schemas.enums import (
+    CommentStatusFilter,
 )
 from outline_client.schemas.envelopes import (
     ListResponse,
@@ -145,6 +148,7 @@ __all__ = [
     "CollectionSourceMetadata",
     "CollectionStatus",
     "Comment",
+    "CommentStatusFilter",
     "DataAttribute",
     "DataAttributeDataType",
     "DataAttributeOption",

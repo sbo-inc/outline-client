@@ -34,6 +34,7 @@ from outline_client.errors import (
     OutlineAPIError,
     PaymentRequiredError,
 )
+from outline_client.schemas.enums import CommentStatusFilter
 from outline_client.schemas.models import Collection, Document
 
 pytestmark: list[pytest.MarkDecorator] = [pytest.mark.integration]
@@ -389,6 +390,35 @@ class TestSharing:
             assert client.remove_document_group(str(document.id), str(group.id)) is True
         finally:
             client.delete_group(str(group.id))
+
+
+# =============================================================================
+# TESTS: Comments
+# =============================================================================
+
+
+class TestComments:
+    def test_lists_one_thread_and_filters_by_status(
+        self, client: OutlineClient, document: Document
+    ) -> None:
+        # The specification omits both filters; the server honours them.
+        thread = client.create_comment(str(document.id), text="Thread")
+        reply = client.create_comment(
+            str(document.id), text="Reply", parent_comment_id=str(thread.id)
+        )
+        resolved = client.create_comment(str(document.id), text="Resolved")
+        client.resolve_comment(str(resolved.id))
+
+        replies = client.list_comments(
+            document_id=str(document.id), parent_comment_id=str(thread.id)
+        )
+        assert [comment.id for comment in replies] == [reply.id]
+
+        done = client.list_comments(
+            document_id=str(document.id),
+            status_filter=[CommentStatusFilter.RESOLVED],
+        )
+        assert [comment.id for comment in done] == [resolved.id]
 
 
 # =============================================================================

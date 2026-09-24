@@ -1,6 +1,7 @@
 from typing import Any
 
 from outline_client.operations.generic import Operation, body, many, one, success
+from outline_client.schemas.enums import CommentStatusFilter
 from outline_client.schemas.models import Comment, SortDirection
 
 # -----------------------------------------------------------------------------
@@ -12,6 +13,8 @@ def list_comments(
     *,
     document_id: str | None = None,
     collection_id: str | None = None,
+    parent_comment_id: str | None = None,
+    status_filter: list[CommentStatusFilter | str] | None = None,
     include_anchor_text: bool | None = None,
     offset: int | None = None,
     limit: int | None = None,
@@ -29,6 +32,8 @@ def list_comments(
         payload=body(
             documentId=document_id,
             collectionId=collection_id,
+            parentCommentId=parent_comment_id,
+            statusFilter=status_filter,
             includeAnchorText=include_anchor_text,
             offset=offset,
             limit=limit,
