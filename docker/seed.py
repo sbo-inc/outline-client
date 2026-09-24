@@ -46,6 +46,11 @@ MEMBER_EMAIL = "member@outline-client.test"
 # unable to tear itself down on a freshly seeded instance.
 COLLECTION_NAME = "Baseline"
 
+# `Collection.DEFAULT_SORT`, which Outline applies in its model rather than the
+# database, so a row written here does not get it. Without it, loading a
+# published share of a document in the collection fails with a 500.
+COLLECTION_SORT = '{"field": "index", "direction": "asc"}'
+
 # Outline's own format: the `ol_api_` prefix followed by 38 word characters.
 # `ApiKey.match` rejects anything else before it even looks in the database.
 TOKEN = "ol_api_outlineClientIntegrationTests000000001"
@@ -91,7 +96,7 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO collections (
     id, name, description, "urlId", "teamId", "createdById", permission,
-    "documentStructure", sharing, index, "createdAt", "updatedAt"
+    "documentStructure", sharing, index, sort, "createdAt", "updatedAt"
 )
 VALUES (
     '{COLLECTION_ID}',
@@ -104,10 +109,11 @@ VALUES (
     '[]'::jsonb,
     true,
     'P',
+    '{COLLECTION_SORT}'::jsonb,
     now(),
     now()
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET sort = EXCLUDED.sort;
 
 INSERT INTO "apiKeys" (id, name, "userId", hash, last4, "createdAt", "updatedAt")
 VALUES (

@@ -53,6 +53,10 @@ REQUIRED_ENV_VARS = ("OUTLINE_API_URL", "OUTLINE_API_TOKEN")
 # methods need somebody else to act on.
 MEMBER_ID = "44444444-4444-4444-8444-444444444444"
 
+# The baseline collection `docker/seed.py` writes with SQL rather than through
+# the API, so it has only what the seed gives it.
+BASELINE_COLLECTION_ID = "55555555-5555-4555-8555-555555555555"
+
 # Methods the community edition does not serve. Each is still called, and each
 # is asserted to fail in the way that edition fails - a 404 for a route that
 # does not exist, a 402 for one that is gated, a 403 for one an API token is
@@ -371,6 +375,27 @@ class TestSharing:
                 assert anonymous.get_document(share_id=str(share.id)).id == document.id
         finally:
             client.revoke_share(str(share.id))
+
+    def test_loads_a_share_of_a_document_in_the_seeded_collection(
+        self, client: OutlineClient
+    ) -> None:
+        # A public load reads the collection's sort, which Outline's model
+        # defaults and the seed has to set itself; without it, this is a 500.
+        created = client.create_document(
+            title="Baseline share",
+            text="Shared from the seeded collection.",
+            collection_id=BASELINE_COLLECTION_ID,
+            publish=True,
+        )
+        share = client.create_share(document_id=str(created.id))
+        try:
+            client.update_share(str(share.id), True)
+
+            body = client.request("shares.info", {"id": str(share.id)})
+            assert body["data"]["shares"][0]["id"] == str(share.id)
+        finally:
+            client.revoke_share(str(share.id))
+            discard(client, str(created.id))
 
     def test_grants_and_removes_a_user_membership(
         self, client: OutlineClient, document: Document
