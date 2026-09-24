@@ -28,6 +28,7 @@ from outline_client.operations import users as user_ops
 from outline_client.operations import views as view_ops
 from outline_client.operations import webhook_subscriptions as webhook_ops
 from outline_client.operations.generic import Operation, body, form_fields
+from outline_client.schemas.enums import CommentStatusFilter
 from outline_client.schemas.models import (
     AccessRequest,
     ApiKey,
@@ -2279,6 +2280,8 @@ class OutlineClient(BaseOutlineClient):
         *,
         document_id: str | None = None,
         collection_id: str | None = None,
+        parent_comment_id: str | None = None,
+        status_filter: list[CommentStatusFilter | str] | None = None,
         include_anchor_text: bool | None = None,
         offset: int | None = None,
         limit: int | None = None,
@@ -2288,6 +2291,19 @@ class OutlineClient(BaseOutlineClient):
         """
         List comments on a document or across a collection.
 
+        Args:
+            document_id: Limit to the comments on one document.
+            collection_id: Limit to the comments across one collection.
+            parent_comment_id: Limit to the replies under this comment.
+            status_filter: Limit to `resolved` or `unresolved` threads.
+                Passing both, or neither, returns every comment.
+            include_anchor_text: Include the passage each inline comment is
+                attached to.
+            offset: How many records to skip.
+            limit: How many records to return.
+            sort: Field to order by.
+            direction: `ASC` or `DESC`.
+
         Returns:
             list[Comment]: The matching comments.
         """
@@ -2295,6 +2311,8 @@ class OutlineClient(BaseOutlineClient):
             comment_ops.list_comments(
                 document_id=document_id,
                 collection_id=collection_id,
+                parent_comment_id=parent_comment_id,
+                status_filter=status_filter,
                 include_anchor_text=include_anchor_text,
                 offset=offset,
                 limit=limit,

@@ -4,6 +4,7 @@ from outline_client.cli.context import ClientContext
 from outline_client.cli.group import CommonClickGroup
 from outline_client.cli.options import pagination_options, parse_json, sorting_options
 from outline_client.cli.output import render
+from outline_client.schemas.enums import CommentStatusFilter
 
 
 @click.group(name="comments", cls=CommonClickGroup)
@@ -16,6 +17,16 @@ def group() -> None:
 @group.command(name="list")
 @click.option("--document-id", default=None, help="Limit to one document.")
 @click.option("--collection-id", default=None, help="Limit to one collection.")
+@click.option(
+    "--parent-comment-id", default=None, help="Limit to the replies under a comment."
+)
+@click.option(
+    "--status",
+    "statuses",
+    multiple=True,
+    type=click.Choice([status.value for status in CommentStatusFilter]),
+    help="Limit to resolved or unresolved threads. Repeatable.",
+)
 @click.option("--anchor-text", is_flag=True, help="Include the anchored passages.")
 @pagination_options
 @sorting_options
@@ -24,6 +35,8 @@ def list_(
     ctx: ClientContext,
     document_id: str | None,
     collection_id: str | None,
+    parent_comment_id: str | None,
+    statuses: tuple[str, ...],
     anchor_text: bool,
     offset: int | None,
     limit: int | None,
@@ -37,6 +50,8 @@ def list_(
         ctx.client.list_comments(
             document_id=document_id,
             collection_id=collection_id,
+            parent_comment_id=parent_comment_id,
+            status_filter=list(statuses) or None,
             include_anchor_text=anchor_text or None,
             offset=offset,
             limit=limit,
