@@ -15,6 +15,7 @@ from typing import Any
 from pydantic import BaseModel
 from pydantic_core import to_jsonable_python
 
+from outline_client.not_given import NotGiven
 from outline_client.schemas.envelopes import Response, SuccessResponse
 
 # =============================================================================
@@ -51,11 +52,11 @@ def body(**fields: Any) -> dict[str, Any]:
     """
     Build a request payload from the arguments a caller actually supplied.
 
-    Arguments left at `None` are dropped rather than sent as JSON `null`,
-    because the two mean different things to Outline: omitting `parentDocumentId`
-    leaves a document where it is, while sending it as `null` moves it to the
-    collection root. A client method exposes only the first, so a caller who
-    needs the second reaches for `OutlineClient.request`.
+    Arguments left at `None` or `NOT_GIVEN` are dropped rather than sent as
+    JSON `null`, because the two mean different things to Outline: omitting a
+    document's `icon` leaves it as it is, while sending it as `null` clears it.
+    The fields Outline accepts as null go through `nullable` instead, which
+    keeps the second meaning.
 
     Enums, UUIDs, datetimes, and nested models are converted to their JSON
     forms here, so an operation can pass a `DocumentFilter` straight through.
@@ -66,7 +67,32 @@ def body(**fields: Any) -> dict[str, Any]:
     return {
         key: to_jsonable_python(value, by_alias=True, exclude_none=True)
         for key, value in fields.items()
-        if value is not None
+        if value is not None and not isinstance(value, NotGiven)
+    }
+
+
+# =============================================================================
+# FUNCTION: nullable
+# =============================================================================
+
+
+def nullable(**fields: Any) -> dict[str, Any]:
+    """
+    Build the part of a payload whose fields Outline accepts as null.
+
+    An argument left at `NOT_GIVEN` is dropped, and `None` is sent as JSON
+    `null`, which is how a caller clears the field. An operation merges this
+    into its `body`, so the list of nullable fields for each method is kept
+    where the method is built. The specification marks only some of them as
+    nullable, so the list is kept by hand from Outline's request schemas.
+
+    Returns:
+        dict[str, Any]: The nullable part of the request payload.
+    """
+    return {
+        key: to_jsonable_python(value, by_alias=True, exclude_none=True)
+        for key, value in fields.items()
+        if not isinstance(value, NotGiven)
     }
 
 

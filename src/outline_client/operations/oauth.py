@@ -7,7 +7,15 @@ grants users have given those applications. They are one module because the
 two halves are only meaningful together.
 """
 
-from outline_client.operations.generic import Operation, body, many, one, success
+from outline_client.not_given import NOT_GIVEN, NotGiven
+from outline_client.operations.generic import (
+    Operation,
+    body,
+    many,
+    nullable,
+    one,
+    success,
+)
 from outline_client.schemas.models import OAuthAuthentication, OAuthClient
 
 # -----------------------------------------------------------------------------
@@ -101,10 +109,10 @@ def update_oauth_client(
     id: str,
     *,
     name: str | None = None,
-    description: str | None = None,
-    developer_name: str | None = None,
-    developer_url: str | None = None,
-    avatar_url: str | None = None,
+    description: str | None | NotGiven = NOT_GIVEN,
+    developer_name: str | None | NotGiven = NOT_GIVEN,
+    developer_url: str | None | NotGiven = NOT_GIVEN,
+    avatar_url: str | None | NotGiven = NOT_GIVEN,
     redirect_uris: list[str] | None = None,
     published: bool | None = None,
 ) -> Operation[OAuthClient]:
@@ -119,12 +127,14 @@ def update_oauth_client(
         payload=body(
             id=id,
             name=name,
+            redirectUris=redirect_uris,
+            published=published,
+        )
+        | nullable(
             description=description,
             developerName=developer_name,
             developerUrl=developer_url,
             avatarUrl=avatar_url,
-            redirectUris=redirect_uris,
-            published=published,
         ),
         parse=one(OAuthClient),
     )

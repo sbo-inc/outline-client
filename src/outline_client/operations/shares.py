@@ -1,4 +1,12 @@
-from outline_client.operations.generic import Operation, body, many, one, success
+from outline_client.not_given import NOT_GIVEN, NotGiven
+from outline_client.operations.generic import (
+    Operation,
+    body,
+    many,
+    nullable,
+    one,
+    success,
+)
 from outline_client.schemas.models import Share, SortDirection
 
 # -----------------------------------------------------------------------------
@@ -88,8 +96,8 @@ def update_share(
     id: str,
     published: bool,
     *,
-    title: str | None = None,
-    icon_url: str | None = None,
+    title: str | None | NotGiven = NOT_GIVEN,
+    icon_url: str | None | NotGiven = NOT_GIVEN,
 ) -> Operation[Share]:
     """
     Build the `shares.update` operation.
@@ -99,7 +107,8 @@ def update_share(
     """
     return Operation(
         path="shares.update",
-        payload=body(id=id, published=published, title=title, iconUrl=icon_url),
+        payload=body(id=id, published=published)
+        | nullable(title=title, iconUrl=icon_url),
         parse=one(Share),
     )
 

@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from outline_client.operations.generic import Operation, body, nested, one, success
+from outline_client.not_given import NOT_GIVEN, NotGiven
+from outline_client.operations.generic import (
+    Operation,
+    body,
+    nested,
+    nullable,
+    one,
+    success,
+)
 from outline_client.schemas.models import Notification
 
 # -----------------------------------------------------------------------------
@@ -41,8 +49,8 @@ def list_notifications(
 def update_notification(
     id: str,
     *,
-    viewed_at: datetime | str | None = None,
-    archived_at: datetime | str | None = None,
+    viewed_at: datetime | str | None | NotGiven = NOT_GIVEN,
+    archived_at: datetime | str | None | NotGiven = NOT_GIVEN,
 ) -> Operation[Notification]:
     """
     Build the `notifications.update` operation.
@@ -52,7 +60,7 @@ def update_notification(
     """
     return Operation(
         path="notifications.update",
-        payload=body(id=id, viewedAt=viewed_at, archivedAt=archived_at),
+        payload=body(id=id) | nullable(viewedAt=viewed_at, archivedAt=archived_at),
         parse=one(Notification),
     )
 

@@ -6,6 +6,8 @@ import click
 from outline_client.cli.context import ClientContext
 from outline_client.cli.group import CommonClickGroup
 from outline_client.cli.options import (
+    clear_option,
+    clearable,
     pagination_options,
     parse_json,
     permission_option,
@@ -174,6 +176,7 @@ def create(
     default=None,
     help="Reject the write if the document has changed since this revision.",
 )
+@clear_option("icon", "color", "collection-id", "template-id")
 @click.pass_obj
 def update(
     ctx: ClientContext,
@@ -190,6 +193,7 @@ def update(
     publish: bool,
     full_width: bool | None,
     last_revision: int | None,
+    clear: tuple[str, ...],
 ) -> None:
     """
     Update a document, leaving the options you omit as they are.
@@ -204,10 +208,10 @@ def update(
             text=text_file.read() if text_file else text,
             edit_mode=edit_mode,
             find_text=find_text,
-            icon=icon,
-            color=color,
-            collection_id=collection_id,
-            template_id=template_id,
+            icon=clearable(icon, "icon", clear),
+            color=clearable(color, "color", clear),
+            collection_id=clearable(collection_id, "collection-id", clear),
+            template_id=clearable(template_id, "template-id", clear),
             publish=publish or None,
             full_width=full_width,
             last_revision=last_revision,
@@ -233,6 +237,7 @@ def delete(ctx: ClientContext, document_id: str, permanent: bool) -> None:
 @click.option("--collection-id", default=None, help="Collection to move into.")
 @click.option("--parent-document-id", default=None, help="Document to nest under.")
 @click.option("--index", type=float, default=None, help="Position among its siblings.")
+@clear_option("collection-id", "parent-document-id")
 @click.pass_obj
 def move(
     ctx: ClientContext,
@@ -240,6 +245,7 @@ def move(
     collection_id: str | None,
     parent_document_id: str | None,
     index: float | None,
+    clear: tuple[str, ...],
 ) -> None:
     """
     Move a document to another collection or under another parent.
@@ -247,8 +253,10 @@ def move(
     render(
         ctx.client.move_document(
             document_id,
-            collection_id=collection_id,
-            parent_document_id=parent_document_id,
+            collection_id=clearable(collection_id, "collection-id", clear),
+            parent_document_id=clearable(
+                parent_document_id, "parent-document-id", clear
+            ),
             index=index,
         )
     )

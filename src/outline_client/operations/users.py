@@ -1,6 +1,14 @@
 from typing import Any
 
-from outline_client.operations.generic import Operation, body, many, one, success
+from outline_client.not_given import NOT_GIVEN, NotGiven
+from outline_client.operations.generic import (
+    Operation,
+    body,
+    many,
+    nullable,
+    one,
+    success,
+)
 from outline_client.schemas.models import (
     Invite,
     Membership,
@@ -122,7 +130,7 @@ def update_user(
     *,
     name: str | None = None,
     language: str | None = None,
-    avatar_url: str | None = None,
+    avatar_url: str | None | NotGiven = NOT_GIVEN,
     preferences: dict[str, Any] | None = None,
 ) -> Operation[User]:
     """
@@ -133,12 +141,8 @@ def update_user(
     """
     return Operation(
         path="users.update",
-        payload=body(
-            name=name,
-            language=language,
-            avatarUrl=avatar_url,
-            preferences=preferences,
-        ),
+        payload=body(name=name, language=language, preferences=preferences)
+        | nullable(avatarUrl=avatar_url),
         parse=one(User),
     )
 

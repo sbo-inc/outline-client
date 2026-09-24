@@ -2,7 +2,7 @@ import click
 
 from outline_client.cli.context import ClientContext
 from outline_client.cli.group import CommonClickGroup
-from outline_client.cli.options import pagination_options
+from outline_client.cli.options import clear_option, clearable, pagination_options
 from outline_client.cli.output import render
 
 
@@ -42,19 +42,26 @@ def list_(
 @click.argument("notification_id")
 @click.option("--viewed-at", default=None, help="Mark read as of this timestamp.")
 @click.option("--archived-at", default=None, help="Archive as of this timestamp.")
+@clear_option("viewed-at", "archived-at")
 @click.pass_obj
 def update(
     ctx: ClientContext,
     notification_id: str,
     viewed_at: str | None,
     archived_at: str | None,
+    clear: tuple[str, ...],
 ) -> None:
     """
     Mark one notification read or archived.
+
+    `--clear viewed-at` marks it unread again, and `--clear archived-at` takes
+    it out of the archive.
     """
     render(
         ctx.client.update_notification(
-            notification_id, viewed_at=viewed_at, archived_at=archived_at
+            notification_id,
+            viewed_at=clearable(viewed_at, "viewed-at", clear),
+            archived_at=clearable(archived_at, "archived-at", clear),
         )
     )
 

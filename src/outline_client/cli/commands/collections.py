@@ -3,6 +3,8 @@ import click
 from outline_client.cli.context import ClientContext
 from outline_client.cli.group import CommonClickGroup
 from outline_client.cli.options import (
+    clear_option,
+    clearable,
     pagination_options,
     parse_json,
     permission_option,
@@ -112,6 +114,7 @@ def create(
 @click.option(
     "--sharing/--no-sharing", default=None, help="Allow public document shares."
 )
+@clear_option("description", "permission", "icon", "color")
 @click.pass_obj
 def update(
     ctx: ClientContext,
@@ -122,18 +125,21 @@ def update(
     icon: str | None,
     color: str | None,
     sharing: bool | None,
+    clear: tuple[str, ...],
 ) -> None:
     """
     Update a collection, leaving the options you omit as they are.
+
+    `--clear permission` makes the collection private to its members.
     """
     render(
         ctx.client.update_collection(
             collection_id,
             name=name,
-            description=description,
-            permission=permission,
-            icon=icon,
-            color=color,
+            description=clearable(description, "description", clear),
+            permission=clearable(permission, "permission", clear),
+            icon=clearable(icon, "icon", clear),
+            color=clearable(color, "color", clear),
             sharing=sharing,
         )
     )

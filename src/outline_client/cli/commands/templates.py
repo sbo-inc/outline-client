@@ -2,7 +2,13 @@ import click
 
 from outline_client.cli.context import ClientContext
 from outline_client.cli.group import CommonClickGroup
-from outline_client.cli.options import pagination_options, parse_json, sorting_options
+from outline_client.cli.options import (
+    clear_option,
+    clearable,
+    pagination_options,
+    parse_json,
+    sorting_options,
+)
 from outline_client.cli.output import render
 
 
@@ -108,6 +114,7 @@ def create(
 @click.option("--color", default=None, help="New hex color.")
 @click.option("--full-width/--no-full-width", default=None, help="Render edge to edge.")
 @click.option("--publish/--draft", default=None, help="Publish the template.")
+@clear_option("collection-id", "icon", "color")
 @click.pass_obj
 def update(
     ctx: ClientContext,
@@ -119,18 +126,21 @@ def update(
     color: str | None,
     full_width: bool | None,
     publish: bool | None,
+    clear: tuple[str, ...],
 ) -> None:
     """
     Update a template, leaving the options you omit as they are.
+
+    `--clear collection-id` makes it available across the whole workspace.
     """
     render(
         ctx.client.update_template(
             template_id,
             title=title,
             data=parse_json(data),
-            collection_id=collection_id,
-            icon=icon,
-            color=color,
+            collection_id=clearable(collection_id, "collection-id", clear),
+            icon=clearable(icon, "icon", clear),
+            color=clearable(color, "color", clear),
             full_width=full_width,
             publish=publish,
         )
