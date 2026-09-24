@@ -608,8 +608,14 @@ class TestAsyncSurface:
         async_client: AsyncOutlineClient,
         document: Document,
     ) -> None:
-        assert await async_client.get_document(str(document.id)) == client.get_document(
-            str(document.id)
+        # Outline's revision job raises a new document's `revision` in the
+        # background just after it is created, so two reads can fall either
+        # side of it. It is the server's counter, not something the two
+        # surfaces parse differently, so it is left out of the comparison.
+        async_read = await async_client.get_document(str(document.id))
+        sync_read = client.get_document(str(document.id))
+        assert async_read.model_dump(exclude={"revision"}) == sync_read.model_dump(
+            exclude={"revision"}
         )
         assert await async_client.list_collections() == client.list_collections()
 
