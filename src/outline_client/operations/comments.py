@@ -110,7 +110,12 @@ def create_comment(
 # -----------------------------------------------------------------------------
 
 
-def update_comment(id: str, data: dict[str, Any]) -> Operation[Comment]:
+def update_comment(
+    id: str,
+    data: dict[str, Any] | None = None,
+    *,
+    text: str | None = None,
+) -> Operation[Comment]:
     """
     Build the `comments.update` operation.
 
@@ -119,7 +124,7 @@ def update_comment(id: str, data: dict[str, Any]) -> Operation[Comment]:
     """
     return Operation(
         path="comments.update",
-        payload=body(id=id, data=data),
+        payload=body(id=id, data=data, text=text),
         parse=one(Comment),
     )
 
