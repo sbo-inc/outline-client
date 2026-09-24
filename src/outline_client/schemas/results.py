@@ -28,8 +28,11 @@ from outline_client.schemas.models import (
     GroupMembership,
     Invite,
     Membership,
+    NavigationNode,
     SearchResult,
+    Share,
     Star,
+    Team,
     User,
 )
 
@@ -378,6 +381,50 @@ class StarsResult(OutlineBaseModel):
     documents: list[Document] = Field(default_factory=list)
     """
     The starred documents.
+    """
+
+
+# =============================================================================
+# CLASS: SharesResult
+# =============================================================================
+
+
+class SharesResult(OutlineBaseModel):
+    """
+    The shares `shares.info` found, with what a public link exposes.
+
+    Looked up by a share's `id`, which is how a public link loads, Outline
+    returns that share with the document or collection it exposes, the
+    workspace's public branding, and the tree of documents it covers. Only a
+    published share is served this way. Looked up by a document or collection,
+    it returns that resource's own share and the parent share that covers it,
+    either of which may be missing, and nothing else.
+
+    The specification describes the answer as a single `Share`; the server has
+    always sent this bundle.
+    """
+
+    shares: list[Share] = Field(default_factory=list)
+    """
+    The shares found, the resource's own share first when it has one.
+    """
+    document: Document | None = None
+    """
+    The shared document, on a public-link load of a document share.
+    """
+    collection: Collection | None = None
+    """
+    The shared collection, on a public-link load of a collection share.
+    """
+    team: Team | None = None
+    """
+    How the workspace presents a public link: its name, avatar, and theme when
+    it has public branding turned on, and where the table of contents sits.
+    """
+    shared_tree: Annotated[NavigationNode | None, Field(alias="sharedTree")] = None
+    """
+    The documents the share covers, on a public-link load of a share that
+    includes child documents.
     """
 
 

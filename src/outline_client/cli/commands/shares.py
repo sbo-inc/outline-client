@@ -45,13 +45,25 @@ def list_(
 
 @group.command(name="get")
 @click.argument("share_id", required=False)
-@click.option("--document-id", default=None, help="Find the share for this document.")
+@click.option("--document-id", default=None, help="Find the shares on this document.")
+@click.option(
+    "--collection-id", default=None, help="Find the shares on this collection."
+)
 @click.pass_obj
-def get(ctx: ClientContext, share_id: str | None, document_id: str | None) -> None:
+def get(
+    ctx: ClientContext,
+    share_id: str | None,
+    document_id: str | None,
+    collection_id: str | None,
+) -> None:
     """
-    Show one share, by its own id or by the document it shares.
+    Show a published share by its id, or the shares on a document or collection.
     """
-    render(ctx.client.get_share(share_id, document_id=document_id))
+    render(
+        ctx.client.get_share(
+            share_id, document_id=document_id, collection_id=collection_id
+        )
+    )
 
 
 @group.command(name="create")

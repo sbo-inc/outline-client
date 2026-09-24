@@ -373,6 +373,17 @@ class TestSharing:
             # point of the one method that takes a shareId.
             with OutlineClient(token="") as anonymous:
                 assert anonymous.get_document(share_id=str(share.id)).id == document.id
+
+                # Loaded by its id, a share comes with what it exposes. The
+                # specification calls this a single share; it is a bundle.
+                loaded = anonymous.get_share(str(share.id))
+                assert [found.id for found in loaded.shares] == [share.id]
+                assert loaded.shares[0].title == "Public"
+                assert loaded.document is not None
+                assert loaded.document.id == document.id
+
+            by_document = client.get_share(document_id=str(document.id))
+            assert [found.id for found in by_document.shares] == [share.id]
         finally:
             client.revoke_share(str(share.id))
 
@@ -428,6 +439,12 @@ class TestSharing:
             assert client.remove_document_group(str(document.id), str(group.id)) is True
         finally:
             client.delete_group(str(group.id))
+
+    def test_a_document_without_a_share_has_none(
+        self, client: OutlineClient, document: Document
+    ) -> None:
+        # Outline answers this lookup with an empty 204.
+        assert client.get_share(document_id=str(document.id)).shares == []
 
 
 # =============================================================================
