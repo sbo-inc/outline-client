@@ -21,10 +21,11 @@ from outline_client.operations.generic import form_fields
 from outline_client.schemas.models import Attachment
 from outline_client.schemas.results import AttachmentDownload, AttachmentUpload
 
+# The package logger. A library only attaches a NullHandler: whether, where,
+# and at what level its records appear is the application's choice. Each
+# request is logged at DEBUG.
 logger = logging.getLogger("outline_client")
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("outline: %(message)s"))
-logger.addHandler(console_handler)
+logger.addHandler(logging.NullHandler())
 
 # The cloud installation. Self-hosted callers pass their own workspace URL, but
 # the cloud host is the one every caller who does not is trying to reach.
@@ -137,7 +138,6 @@ class BaseOutlineClient:
         self,
         url: str | None = None,
         token: str | None = None,
-        log: bool = False,
         timeout: float | tuple[float, float] | None = DEFAULT_TIMEOUT,
     ) -> None:
         """
@@ -150,14 +150,8 @@ class BaseOutlineClient:
             token: The API token to authenticate with. Outline calls these
                 API keys and they begin with `ol_api_`.
                 (Environment: `OUTLINE_API_TOKEN`)
-            log: Enables request logging at INFO level.
             timeout: Per-request timeout in seconds applied to every call.
         """
-        if log:
-            logger.setLevel(logging.INFO)
-        else:
-            logger.setLevel(logging.CRITICAL)
-
         self.url = url or os.environ.get("OUTLINE_API_URL") or DEFAULT_URL
 
         # An empty token is meaningful - it is how a caller says "send no

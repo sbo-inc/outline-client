@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- **Breaking:** logging follows the library pattern. Importing `outline_client` attaches only a `NullHandler`, and nothing sets a logger level, so records appear only where the application's logging sends them. The `log` argument of `OutlineClient` and `AsyncOutlineClient` is removed; configure the `outline_client` logger instead. Each request logs at DEBUG, and the CLI's `--log` prints them to stderr.
+
 ## [0.2.0] - 2026-09-24
 
 - `outline_client.prosemirror.to_markdown` renders template and comment bodies as markdown, and the CLI gets `--markdown` ([#1]).
