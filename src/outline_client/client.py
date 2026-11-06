@@ -118,7 +118,6 @@ class OutlineClient(BaseOutlineClient):
         url: str | None = None,
         token: str | None = None,
         headers: dict[str, str] = {},
-        log: bool = False,
         timeout: float | tuple[float, float] | None = DEFAULT_TIMEOUT,
         retries: int | None = None,
     ) -> None:
@@ -132,7 +131,6 @@ class OutlineClient(BaseOutlineClient):
             token: The API token to authenticate with.
                 (Environment: `OUTLINE_API_TOKEN`)
             headers: Additional headers to include in requests.
-            log: Enables request logging at INFO level.
             timeout: Per-request timeout in seconds applied to every call.
                 Accepts a single float, a `(connect, read)` tuple, or `None`
                 to disable. Defaults to `DEFAULT_TIMEOUT`.
@@ -142,7 +140,7 @@ class OutlineClient(BaseOutlineClient):
                 issues: a create can never be double-submitted. `None`
                 (default) disables retries.
         """
-        super().__init__(url=url, token=token, log=log, timeout=timeout)
+        super().__init__(url=url, token=token, timeout=timeout)
 
         # `Content-Type` is deliberately not set here. httpx derives it per
         # request from the body it is given - `application/json` for the typed
@@ -196,7 +194,7 @@ class OutlineClient(BaseOutlineClient):
             dict[str, Any]: The decoded JSON response body.
         """
         url = self._endpoint(path)
-        logger.info("POST %s", url)
+        logger.debug("POST %s", url)
 
         response = self._http.post(
             url=url,
@@ -240,7 +238,7 @@ class OutlineClient(BaseOutlineClient):
             httpx.Response: The final response, whose body is the file.
         """
         url = self._endpoint(path)
-        logger.info("POST %s", url)
+        logger.debug("POST %s", url)
 
         response = self._http.post(
             url=url,
@@ -1950,7 +1948,7 @@ class OutlineClient(BaseOutlineClient):
             publish=publish,
         )
         url = self._endpoint(operation.path)
-        logger.info("POST %s", url)
+        logger.debug("POST %s", url)
 
         response = self._http.post(
             url=url,
@@ -3178,7 +3176,7 @@ class OutlineClient(BaseOutlineClient):
         request = self._storage_request(
             upload, content, name=name, content_type=content_type
         )
-        logger.info("%s %s", request["method"], request["url"])
+        logger.debug("%s %s", request["method"], request["url"])
         response = self._http.request(**request)
 
         return self._uploaded(upload, response)
@@ -3237,7 +3235,7 @@ class OutlineClient(BaseOutlineClient):
             str: The URL the attachment is readable at.
         """
         url = self._endpoint("attachments.redirect")
-        logger.info("POST %s", url)
+        logger.debug("POST %s", url)
 
         response = self._http.post(
             url=url,
