@@ -1,8 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.0] - 2026-11-05
 
-- **Breaking:** logging follows the library pattern. Importing `outline_client` attaches only a `NullHandler`, and nothing sets a logger level, so records appear only where the application's logging sends them. The `log` argument of `OutlineClient` and `AsyncOutlineClient` is removed; configure the `outline_client` logger instead. Each request logs at DEBUG, and the CLI's `--log` prints them to stderr.
+- **Breaking:** logging follows the library pattern. Importing `outline_client` attaches only a `NullHandler`, and nothing sets a logger level, so records appear only where the application's logging sends them. The `log` argument of `OutlineClient` and `AsyncOutlineClient` is removed; configure the `outline_client` logger instead. Each request logs at DEBUG, and the CLI's `--log` prints them to stderr ([#17]).
+- Tested on Python 3.15.
 
 ## [0.2.0] - 2026-09-24
 
@@ -19,6 +20,7 @@
 
 - First release. `OutlineClient` and `AsyncOutlineClient` cover all 154 methods in Outline's OpenAPI specification, with Pydantic models generated from it, and an `outline` CLI over the same surface.
 
+[0.3.0]: https://github.com/sbo-inc/outline-client/releases/tag/v0.3.0
 [0.2.0]: https://github.com/sbo-inc/outline-client/releases/tag/v0.2.0
 [0.1.0]: https://github.com/sbo-inc/outline-client/releases/tag/v0.1.0
 [#1]: https://github.com/sbo-inc/outline-client/issues/1
@@ -29,3 +31,4 @@
 [#11]: https://github.com/sbo-inc/outline-client/issues/11
 [#12]: https://github.com/sbo-inc/outline-client/issues/12
 [#13]: https://github.com/sbo-inc/outline-client/issues/13
+[#17]: https://github.com/sbo-inc/outline-client/pull/17
